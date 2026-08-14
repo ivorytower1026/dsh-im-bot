@@ -1,0 +1,43 @@
+{
+  "name": "@dsh-extra/im-channel",
+  "version": "0.0.1",
+  "description": "IM front-end channels (Feishu, WeChat, QQ, DingTalk) for DeepSeek Harness: scan-code login, passphrase binding, message routing to agent sessions",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "dev": "tsc -b tsconfig.json --watch",
+    "test": "vitest run",
+    "typecheck": "tsc -b tsconfig.json --noEmit"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@larksuiteoapi/node-sdk": "^1.51.0",
+    "@tencent-connect/qqbot-connector": "^1.0.0",
+    "dingtalk-stream": "^0.10.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

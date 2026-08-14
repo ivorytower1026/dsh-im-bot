@@ -1,0 +1,15 @@
+# Editor / OS noise
+Thumbs.db
+.DS_Store
+
+# Build output
+lib/
+dist/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Local credentials — never commit
+.env
+*.local.json

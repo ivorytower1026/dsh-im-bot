@@ -1,0 +1,55 @@
+{
+  "name": "@dsh-extra/dsh-client-ui-settings-im",
+  "description": "IM channels settings section: manage Feishu/WeChat/QQ/DingTalk channel instances for the im-channel plugin",
+  "version": "0.0.1",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-api-remotes"
+      ],
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-client-runtime": ">=0.1.0",
+    "@deepseek-ai/dsh-client-ui-settings": ">=0.1.0",
+    "@deepseek-ai/dsh-client-ui-slots": ">=0.1.0",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-api-remotes": "link:D:/project/fork_project/deepseek-harness/packages/api/remotes",
+    "@deepseek-ai/dsh-client-locale": "link:D:/project/fork_project/deepseek-harness/packages/client/locale",
+    "@deepseek-ai/dsh-client-runtime": "link:D:/project/fork_project/deepseek-harness/packages/client/runtime",
+    "@deepseek-ai/dsh-client-schema-form": "link:D:/project/fork_project/deepseek-harness/packages/client/schema-form",
+    "@deepseek-ai/dsh-client-ui-primitives": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-primitives",
+    "@deepseek-ai/dsh-client-ui-settings": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-settings",
+    "@deepseek-ai/dsh-client-ui-slots": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-slots",
+    "@deepseek-ai/dsh-client-web-react": "link:D:/project/fork_project/deepseek-harness/packages/client/web-react",
+    "@types/react": "~18.3.1",
+    "react": "^18.2.0",
+    "typescript": "^5.9.3"
+  }
+}

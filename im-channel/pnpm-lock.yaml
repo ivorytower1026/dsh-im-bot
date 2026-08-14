@@ -39,6 +39,12 @@ importers:
       '@deepseek-ai/dsh-session':
         specifier: link:../../deepseek-harness/packages/core/session
         version: link:../../deepseek-harness/packages/core/session
+      '@deepseek-ai/dsh-settings':
+        specifier: link:../../deepseek-harness/packages/settings/settings
+        version: link:../../deepseek-harness/packages/settings/settings
+      '@deepseek-ai/schemastery':
+        specifier: link:../../deepseek-harness/vendor/schemastery
+        version: link:../../deepseek-harness/vendor/schemastery
       '@types/node':
         specifier: ^26.2.0
         version: 26.2.0

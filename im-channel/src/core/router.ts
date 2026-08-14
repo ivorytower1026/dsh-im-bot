@@ -37,8 +37,12 @@ export interface BindStoreLike {
 export class Router {
   private readonly commandPrefix: string
 
+  /** The wired channels (readonly view for topology reconciliation). */
+  readonly channels: readonly ImChannel[]
+
   constructor(private readonly deps: RouterDeps) {
     this.commandPrefix = deps.config?.commandPrefix ?? '/'
+    this.channels = deps.channels
   }
 
   /** Wire all channels' inbound handlers to routeMessage and connect them. */

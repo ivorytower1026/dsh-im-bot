@@ -5,6 +5,8 @@
     "moduleResolution": "NodeNext",
     "lib": ["ES2023"],
     "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "strict": true,
     "noImplicitAny": true,
     "exactOptionalPropertyTypes": true,

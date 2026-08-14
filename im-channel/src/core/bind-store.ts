@@ -10,7 +10,7 @@ export interface Binding {
   readonly userId: string
   /** Harness session id the IM user chats through. */
   sessionId: string
-  readonly boundAt: string
+  boundAt: string
 }
 
 /** Store shape persisted at ~/.dsh/im-channel/bindings.json. */

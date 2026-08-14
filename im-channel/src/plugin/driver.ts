@@ -1,8 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis'
-import type { Agent, AgentRegistry } from '@deepseek-ai/dsh-agent'
+import type { Agent, AgentOptions, AgentRegistry } from '@deepseek-ai/dsh-agent'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
-import type { SessionEvent } from '@deepseek-ai/dsh-session'
-import type { SessionId } from '@deepseek-ai/dsh-brand'
+import { SessionId, type SessionEvent } from '@deepseek-ai/dsh-session'
 import type { AgentDriver } from '../core/router.ts'
 
 interface InflightTurn {
@@ -23,9 +22,9 @@ interface InflightTurn {
 export class HarnessDriver implements AgentDriver {
   private readonly agents: AgentRegistry
   /** Agents created by this driver, keyed by session id. */
-  private readonly owned = new Map<string, { agent: Agent; inflight?: InflightTurn }>()
+  private readonly owned = new Map<string, { agent: Agent; inflight: InflightTurn | undefined }>()
 
-  constructor(private readonly ctx: Context, private readonly options: { cwd?: string; agentOptions?: unknown } = {}) {
+  constructor(private readonly ctx: Context, private readonly options: { cwd?: string; agentOptions?: AgentOptions } = {}) {
     this.agents = ctx.agents
     ctx.on('session/event', (session, event: SessionEvent) => {
       const record = this.owned.get(session.header.id)
@@ -51,16 +50,18 @@ export class HarnessDriver implements AgentDriver {
   }
 
   async startSession(): Promise<string> {
-    const handle = await this.agents.create({
+    const options: { sessionId: ReturnType<typeof SessionId>; meta: { cwd: string }; agentOptions?: AgentOptions } = {
       sessionId: SessionId(crypto.randomUUID()),
       meta: { cwd: this.options.cwd ?? process.cwd() },
-      agentOptions: this.options.agentOptions,
-    })
+    }
+    if (this.options.agentOptions !== undefined) options.agentOptions = this.options.agentOptions
+    const handle = await this.agents.create(options)
     const dispose = handle.dispose
-    this.owned.set(handle.agent.id, { agent: handle.agent })
+    this.owned.set(handle.agent.id, { agent: handle.agent, inflight: undefined })
     this.ctx.effect(() => {
       void dispose()
       this.owned.delete(handle.agent.id)
+      return () => {}
     }, 'im-channel.agent')
     return handle.agent.id
   }

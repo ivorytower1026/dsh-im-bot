@@ -1,0 +1,11 @@
+- insert:
+    - id: im-channel
+      name: '@dsh-extra/im-channel'
+      inject: [agents]
+      config:
+        channels:
+          wechat: { enabled: true }
+          qq: { enabled: true }
+          feishu: { enabled: true }
+          dingtalk: { enabled: true }
+        commandPrefix: "/"

@@ -10,3 +10,7 @@ export { WechatChannel, loginWechat, loadWechatCredentials } from './channels/we
 export type { WechatCredentials } from './channels/wechat/index.ts'
 export { QqChannel, loginQq, loadQqCredentials } from './channels/qq/index.ts'
 export type { QqCredentials } from './channels/qq/index.ts'
+export { FeishuChannel, loadFeishuCredentials, saveFeishuCredentials } from './channels/feishu/index.ts'
+export type { FeishuCredentials } from './channels/feishu/index.ts'
+export { DingtalkChannel, loadDingtalkCredentials, saveDingtalkCredentials } from './channels/dingtalk/index.ts'
+export type { DingtalkCredentials } from './channels/dingtalk/index.ts'

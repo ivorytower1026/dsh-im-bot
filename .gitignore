@@ -2,14 +2,14 @@
 Thumbs.db
 .DS_Store
 
-# Build output
-lib/
-dist/
-*.tsbuildinfo
-
 # Dependencies
 node_modules/
 
-# Local credentials — never commit
+# Build metadata (lib/ is committed: installs from GitHub have no build step)
+*.tsbuildinfo
+
+# Local assets & scratch
+logs/
+测试图片/
 .env
 *.local.json

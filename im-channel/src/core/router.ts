@@ -62,6 +62,8 @@ export interface RouterDeps {
   readonly cancel?: (sessionId: string) => boolean
   /** Change the harness-wide default model (/模型, /思考); absent = read-only. */
   readonly setDefaultModel?: (patch: { provider?: string; model?: string; reasoningEffort?: string }) => Promise<void>
+  /** Effort levels the current model supports (/思考); absent or empty = only raw ids. */
+  readonly efforts?: () => Array<{ id: string; name: string }> | Promise<Array<{ id: string; name: string }>>
 }
 
 /** BindStore surface the router needs (subset of BindStore for testing). */
@@ -247,21 +249,32 @@ export class Router {
           await channel.send(target, { text: '思考级别切换不可用。' })
           return
         }
-        const levels = ['off', 'low', 'medium', 'high']
+        const current = facts()
+        const levels = await this.deps.efforts?.() ?? []
+        if (levels.length === 0) {
+          await channel.send(target, { text: '当前模型不支持思考级别切换。' })
+          return
+        }
+        const currentName = levels.find(l => l.id === current.reasoningEffort)?.name ?? current.reasoningEffort ?? '默认'
+        const header = `🧠 思考级别：${currentName}`
+        const list = levels.map((l, i) => {
+          const mark = l.id === current.reasoningEffort ? ' ⬅ 当前' : ''
+          return `${i + 1}. ${l.name}${mark}`
+        })
         if (args.length === 0) {
-          const current = facts()
-          await channel.send(target, {
-            text: `🧠 思考级别：${current.reasoningEffort ?? '默认'}\n──────────────────\n可选：${levels.join(' / ')}\n发送 /思考 <级别> 切换，例如：/思考 high`,
-          })
+          await channel.send(target, { text: [header, '──────────────────', ...list, '──────────────────', '发送 /思考 N 选择。'].join('\n') })
           return
         }
-        const level = args[0].toLowerCase()
-        if (!levels.includes(level)) {
-          await channel.send(target, { text: `未知级别 ${args[0]}。可选：${levels.join(' / ')}` })
+        const choice = Number.parseInt(args[0] ?? '', 10)
+        const picked = Number.isInteger(choice) && choice >= 1 && choice <= levels.length
+          ? levels[choice - 1]
+          : levels.find(l => l.id === args[0] || l.name.toLowerCase() === args[0].toLowerCase())
+        if (picked === undefined) {
+          await channel.send(target, { text: [header, '──────────────────', ...list, '──────────────────', `无效选择 ${args[0]}。发送 /思考 N 选择。`].join('\n') })
           return
         }
-        await this.deps.setDefaultModel({ reasoningEffort: level })
-        await channel.send(target, { text: `✅ 思考级别已切换：${level}。` })
+        await this.deps.setDefaultModel({ reasoningEffort: picked.id })
+        await channel.send(target, { text: `✅ 思考级别已切换：${picked.name}` })
         return
       }
       case 'project': {
@@ -304,17 +317,30 @@ export class Router {
           标准: '发送全部 AI 文字消息',
           详细: '工具调用过程 + 全部 AI 消息',
         }
+        const current = this.deps.store.verbosityFor?.(message.from) ?? '标准'
+        const list = levels.map((name, i) => {
+          const mark = name === current ? ' ⬅ 当前' : ''
+          return `${i + 1}. ${name} — ${descriptions[name]}${mark}`
+        })
         const requested = args[0]
-        let current: string
+        const asNumber = Number.parseInt(requested ?? '', 10)
+        let picked: (typeof levels)[number] | undefined
         if (requested !== undefined && (levels as readonly string[]).includes(requested)) {
-          const picked = requested as '简洁' | '标准' | '详细'
+          picked = requested as (typeof levels)[number]
+        } else if (Number.isInteger(asNumber) && asNumber >= 1 && asNumber <= levels.length) {
+          picked = levels[asNumber - 1]
+        }
+        if (picked !== undefined) {
           this.deps.store.setVerbosity?.(message.from, picked)
-          current = picked
+        } else if (requested !== undefined) {
+          await channel.send(target, { text: [`💬 回复详细程度`, '──────────────────', ...list, '──────────────────', `无效选择 ${requested}。发送 /回复 N 或 /回复 <级别名> 设置。`].join('\n') })
+          return
         } else {
-          current = this.deps.store.cycleVerbosity?.(message.from) ?? '标准'
+          picked = levels[(levels.indexOf(current as (typeof levels)[number]) + 1) % levels.length] ?? '标准'
+          this.deps.store.setVerbosity?.(message.from, picked)
         }
         await channel.send(target, {
-          text: `💬 回复详细程度：${current}\n（${descriptions[current] ?? ''}）\n──────────────────\n发送 /回复 简洁、/回复 标准、/回复 详细 直接指定；不带参数则轮换切换。`,
+          text: `✅ 回复详细程度：${picked}\n（${descriptions[picked]}）\n──────────────────\n${list.join('\n')}\n──────────────────\n发送 /回复 N 直接指定，不带参数则轮换切换。`,
         })
         return
       }

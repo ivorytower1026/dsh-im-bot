@@ -1,0 +1,10 @@
+export { name, inject, apply, Config } from './plugin/index.ts';
+export type { ImChannelSection, ChannelInstanceConfig } from './plugin/index.ts';
+export { BindStore } from './core/bind-store.ts';
+export { Router } from './core/router.ts';
+export type { ImChannel, InboundMessage, OutboundMessage, AgentDriver } from './core/index.ts';
+export { HarnessDriver } from './plugin/driver.ts';
+export { WechatChannel, loadWechatCredentials } from './channels/wechat/index.ts';
+export type { WechatCredentials } from './channels/wechat/index.ts';
+export { FeishuChannel, loadFeishuCredentials, saveFeishuCredentials } from './channels/feishu/index.ts';
+export type { FeishuCredentials } from './channels/feishu/index.ts';

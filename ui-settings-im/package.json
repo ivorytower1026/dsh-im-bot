@@ -1,9 +1,8 @@
 {
   "name": "@dsh-extra/dsh-client-ui-settings-im",
-  "description": "IM channels settings section: manage Feishu/WeChat/QQ/DingTalk channel instances for the im-channel plugin",
+  "description": "手机连接 settings tab: scan-code login and binding management for the im-channel plugin (WeChat / Feishu)",
   "version": "0.0.1",
   "license": "MIT",
-  "private": true,
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
@@ -16,9 +15,12 @@
       "types": "./lib/types/client/index.d.ts",
       "default": "./lib/client.js"
     },
-    "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
+  "files": [
+    "lib/**",
+    "cordis.patch.yml"
+  ],
   "dsh": {
     "client": {
       "inject": [
@@ -43,19 +45,13 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh-api-remotes": "link:D:/project/fork_project/deepseek-harness/packages/api/remotes",
-    "@deepseek-ai/dsh-client-locale": "link:D:/project/fork_project/deepseek-harness/packages/client/locale",
-    "@deepseek-ai/dsh-client-runtime": "link:D:/project/fork_project/deepseek-harness/packages/client/runtime",
-    "@deepseek-ai/dsh-client-schema-form": "link:D:/project/fork_project/deepseek-harness/packages/client/schema-form",
-    "@deepseek-ai/dsh-client-ui-primitives": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-primitives",
-    "@deepseek-ai/dsh-client-ui-settings": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-settings",
-    "@deepseek-ai/dsh-client-ui-settings-plugins": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-settings-plugins",
-    "@deepseek-ai/dsh-client-ui-slots": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-slots",
-    "@deepseek-ai/dsh-client-web-react": "link:D:/project/fork_project/deepseek-harness/packages/client/web-react",
+    "@deepseek-ai/dsh-api-remotes": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-client-locale": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-client-runtime": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-client-ui-settings": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-client-ui-slots": "^0.0.1-rc.1",
     "@types/react": "~18.3.1",
-    "fzstd": "^0.1.1",
     "react": "^18.2.0",
-    "sharp": "^0.35.3",
     "tsdown": "^0.22.14",
     "typescript": "^5.9.3"
   },

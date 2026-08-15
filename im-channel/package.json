@@ -1,9 +1,8 @@
 {
   "name": "@dsh-extra/im-channel",
   "version": "0.0.1",
-  "description": "IM front-end channels (Feishu, WeChat, QQ, DingTalk) for DeepSeek Harness: scan-code login, passphrase binding, message routing to agent sessions",
+  "description": "IM front-end channels (WeChat, Feishu) for DeepSeek Harness: scan-code login, message routing to agent sessions",
   "license": "MIT",
-  "private": true,
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
@@ -15,7 +14,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib/**"
+    "lib/**",
+    "cordis.patch.yml"
   ],
   "scripts": {
     "build": "tsc -b tsconfig.json",
@@ -41,16 +41,15 @@
     "@deepseek-ai/schemastery": ">=0.1.0"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "link:../../deepseek-harness/vendor/cordis",
-    "@deepseek-ai/dsh-agent": "link:../../deepseek-harness/packages/core/agent",
-    "@deepseek-ai/dsh-brand": "link:../../deepseek-harness/packages/util/brand",
-    "@deepseek-ai/dsh-host-webserver": "link:D:/project/fork_project/deepseek-harness/packages/host/webserver",
-    "@deepseek-ai/dsh-llm": "link:../../deepseek-harness/packages/llm/llm",
-    "@deepseek-ai/dsh-session": "link:../../deepseek-harness/packages/core/session",
-    "@deepseek-ai/dsh-settings": "link:../../deepseek-harness/packages/settings/settings",
-    "@deepseek-ai/schemastery": "link:../../deepseek-harness/vendor/schemastery",
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-agent": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-brand": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-host-webserver": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-llm": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-session": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-settings": "^0.0.1-rc.1",
+    "@deepseek-ai/schemastery": "^3.18.1",
     "@types/node": "^26.2.0",
-    "@types/qrcode-terminal": "^0.12.2",
     "@types/ws": "^8.18.1",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"

@@ -137,6 +137,19 @@ export function apply(ctx: Context, config: ImChannelSection): void {
           return choices
         },
         cancel: sessionId => driver.cancel(sessionId),
+        efforts: async () => {
+          const llm = ctx.get('llm')
+          const selection = ctx.get('agentDefaultModel')
+          if (llm === undefined || selection === undefined) return []
+          const value = selection.currentSelection() as { provider: string; model: string }
+          if (value.provider === '' || value.model === '') return []
+          try {
+            const info = await llm.resolveModelInfo(value.provider, value.model)
+            return info.reasoning?.efforts.map(e => ({ id: e.id as string, name: e.name })) ?? []
+          } catch {
+            return []
+          }
+        },
         setDefaultModel: async patch => {
           const service = ctx.get('agentDefaultModel')
           if (service === undefined) throw new Error('agentDefaultModel 服务不可用')

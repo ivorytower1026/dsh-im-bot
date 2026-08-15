@@ -67,6 +67,12 @@ export class LoginApi {
       // Start the platform login out-of-band; the QR URL and terminal state
       // land on the session record for status polling.
       void this.runLogin(loginKind, session)
+      // Hold the start response briefly until the platform returns the QR
+      // URL so the client can paint it immediately instead of waiting for
+      // its first status poll.
+      for (let waited = 0; waited < 100 && session.qrUrl === undefined && session.status === 'pending'; waited++) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
       // Some platform bridges (notably QQ) poll forever without timing out;
       // cap the session so the UI stops waiting after the TTL.
       setTimeout(() => {
@@ -76,7 +82,7 @@ export class LoginApi {
         }
       }, SESSION_TTL_MS).unref()
       // The QR URL arrives asynchronously from the platform; poll status.
-      respondJson(res, 200, { ok: true })
+      respondJson(res, 200, { ok: true, qrUrl: session.qrUrl })
     } catch (error) {
       respondJson(res, 500, { ok: false, error: messageOf(error) })
     }

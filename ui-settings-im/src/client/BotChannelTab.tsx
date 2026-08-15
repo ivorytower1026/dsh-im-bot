@@ -67,10 +67,13 @@ export function BotChannelTab(props: BotChannelTabProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kind }),
       })
-      const body = await response.json() as { ok: boolean; error?: string }
+      const body = await response.json() as { ok: boolean; qrUrl?: string; error?: string }
       if (!body.ok) {
         setStartError(body.error ?? 'login start failed')
         return
+      }
+      if (body.qrUrl !== undefined) {
+        setLogin({ kind, status: 'pending', qrUrl: body.qrUrl, error: undefined })
       }
     } catch (error) {
       setStartError(error instanceof Error ? error.message : String(error))

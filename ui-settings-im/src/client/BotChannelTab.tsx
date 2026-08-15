@@ -94,7 +94,8 @@ export function BotChannelTab(props: BotChannelTabProps) {
   }
 
   useEffect(() => {
-    void refreshBindings()
+    // Passphrase fetch is deferred: the card shows only after a confirmed
+    // scan, so nothing fetches it on tab open before any login exists.
     return () => { if (pollTimer.current !== undefined) clearInterval(pollTimer.current) }
   }, [])
 
@@ -141,9 +142,14 @@ export function BotChannelTab(props: BotChannelTabProps) {
       const body = await response.json() as { ok: boolean; session: LoginStatus | null }
       if (!body.ok || body.session === null) return
       setLogin(body.session)
-      if (body.session.status === 'confirmed' || body.session.status === 'error') {
+      if (body.session.status === 'confirmed') {
         stopPolling()
+        // Scan confirmed: fetch the passphrase now so the bind command
+        // card appears right after a successful login.
         void refreshBindings()
+      }
+      if (body.session.status === 'error') {
+        stopPolling()
       }
     } catch {
       // Transient fetch failure: keep polling; the TTL on the host side ends it.
@@ -227,7 +233,7 @@ export function BotChannelTab(props: BotChannelTabProps) {
           </div>
         </div>
       )}
-      {passphrase !== undefined && (
+      {passphrase !== undefined && login?.status === 'confirmed' && (
         <div className={css.passphraseCard}>
           <span className={css.passphraseTitle}>{t('passphrase.title')}</span>
           <span className={css.passphraseHint}>{t('passphrase.hint')}</span>

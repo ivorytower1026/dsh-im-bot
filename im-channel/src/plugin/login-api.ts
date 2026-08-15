@@ -9,9 +9,19 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 // Type-only: pulls the webServer Context merge declared by dsh-host-webserver.
 import type {} from '@deepseek-ai/dsh-host-webserver'
+import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 
 type LoginKind = 'wechat' | 'qq' | 'feishu' | 'dingtalk'
 const KINDS: readonly LoginKind[] = ['wechat', 'qq', 'feishu', 'dingtalk']
+
+const KIND_LABELS: Record<LoginKind, string> = {
+  wechat: '微信',
+  qq: 'QQ',
+  feishu: '飞书',
+  dingtalk: '钉钉',
+}
+
+const NS = settingsNamespace('im-channel')
 
 /** Session record the platform login bridges write the QR URL onto. */
 export interface QrLoginBridge {
@@ -44,6 +54,51 @@ export class LoginApi {
       path: '/im-channel/login/status',
       handler: (req: IncomingMessage, res: ServerResponse) => this.handleStatus(res),
     })
+    this.ctx.webServer.register({
+      kind: 'exact',
+      path: '/im-channel/bindings',
+      handler: (_req: IncomingMessage, res: ServerResponse) => this.handleBindings(res),
+    })
+  }
+
+  /**
+   * Auto-create a channel instance in settings once a platform login is
+   * confirmed so the router (re)starts without manual configuration. Names
+   * are `<kind>-N` counting existing instances of the same kind.
+   */
+  private async ensureChannelInstance(kind: LoginKind): Promise<void> {
+    try {
+      this.ctx.inject(['settings'], async sctx => {
+        const section = sctx.settings.get(NS) as { channels?: Record<string, { kind: LoginKind }> } | undefined
+        const channels = section?.channels ?? {}
+        const sameKind = Object.entries(channels).filter(([, v]) => v.kind === kind)
+        const name = `${kind}-${sameKind.length + 1}`
+        await sctx.settings.update(NS, {
+          channels: {
+            [name]: { kind, enabled: true, displayName: `${KIND_LABELS[kind]}机器人 ${sameKind.length + 1}` },
+          },
+        })
+      })
+    } catch (error) {
+      this.ctx.logger.warn(`im-channel: 自动创建 ${kind} 实例失败: ${messageOf(error)}`)
+    }
+  }
+
+  private handleBindings(res: ServerResponse): void {
+    // Read the persisted binding rows directly; each /bind adds one
+    // user-to-session row per platform bot.
+    void this.readBindings().then(rows => {
+      respondJson(res, 200, { ok: true, bindings: rows, count: rows.length })
+    })
+  }
+
+  private async readBindings(): Promise<Array<{ kind: string; boundAt: string; sessionId: string }>> {
+    try {
+      const { listBindings } = await import('../core/bind-store.ts')
+      return listBindings()
+    } catch {
+      return []
+    }
   }
 
   private async handleStart(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -113,6 +168,7 @@ export class LoginApi {
         }
       }
       session.status = 'confirmed'
+      await this.ensureChannelInstance(kind)
     } catch (error) {
       session.status = 'error'
       session.error = messageOf(error)

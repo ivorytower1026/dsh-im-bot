@@ -26,7 +26,20 @@ interface LoginStatus {
   error: string | undefined
 }
 
+interface BindingRow {
+  kind: Kind
+  boundAt: string
+  sessionId: string
+}
+
 const POLL_INTERVAL_MS = 1500
+
+const KIND_LABELS: Record<Kind, string> = {
+  wechat: '微信',
+  qq: 'QQ',
+  feishu: '飞书',
+  dingtalk: '钉钉',
+}
 
 const CARD_MARKS = {
   wechat: WechatMark,
@@ -41,9 +54,23 @@ export function BotChannelTab(props: BotChannelTabProps) {
   const [selected, setSelected] = useState<Kind | undefined>(undefined)
   const [login, setLogin] = useState<LoginStatus | undefined>(undefined)
   const [startError, setStartError] = useState<string | undefined>(undefined)
+  const [bindings, setBindings] = useState<BindingRow[]>([])
   const pollTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
-  useEffect(() => () => { if (pollTimer.current !== undefined) clearInterval(pollTimer.current) }, [])
+  const refreshBindings = async (): Promise<void> => {
+    try {
+      const response = await fetch('/im-channel/bindings')
+      const body = await response.json() as { ok: boolean; bindings: BindingRow[] }
+      if (body.ok) setBindings(body.bindings)
+    } catch {
+      // Transient fetch failure: keep the last list.
+    }
+  }
+
+  useEffect(() => {
+    void refreshBindings()
+    return () => { if (pollTimer.current !== undefined) clearInterval(pollTimer.current) }
+  }, [])
 
   const stopPolling = (): void => {
     if (pollTimer.current !== undefined) {
@@ -88,7 +115,10 @@ export function BotChannelTab(props: BotChannelTabProps) {
       const body = await response.json() as { ok: boolean; session: LoginStatus | null }
       if (!body.ok || body.session === null) return
       setLogin(body.session)
-      if (body.session.status === 'confirmed' || body.session.status === 'error') stopPolling()
+      if (body.session.status === 'confirmed' || body.session.status === 'error') {
+        stopPolling()
+        void refreshBindings()
+      }
     } catch {
       // Transient fetch failure: keep polling; the TTL on the host side ends it.
     }
@@ -171,6 +201,30 @@ export function BotChannelTab(props: BotChannelTabProps) {
           </div>
         </div>
       )}
+      <div className={css.bindings}>
+        <h3 className={css.bindingsTitle}>{t('bindings.title')}（{bindings.length}）</h3>
+        {bindings.length === 0 && <p className={css.bindingsEmpty}>{t('bindings.empty')}</p>}
+        {bindings.length > 0 && (
+          <table className={css.bindingsTable}>
+            <thead>
+              <tr>
+                <th>{t('bindings.kind')}</th>
+                <th>{t('bindings.session')}</th>
+                <th>{t('bindings.boundAt')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bindings.map((row, index) => (
+                <tr key={`${row.kind}:${row.sessionId}:${index}`}>
+                  <td><span className={css.bindingKind}>{KIND_LABELS[row.kind] ?? row.kind}</span></td>
+                  <td className={css.bindingSession}>{row.sessionId}</td>
+                  <td>{row.boundAt.replace('T', ' ').slice(0, 19)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   )
 }

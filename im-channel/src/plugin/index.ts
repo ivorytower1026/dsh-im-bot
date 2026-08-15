@@ -78,6 +78,14 @@ export function apply(ctx: Context, config: ImChannelSection): void {
       // set, kind, or enabled flag restarts the router wholesale — channel
       // connections are cheap to re-establish relative to config edits.
       const next = current
+      // A platform with saved credentials but no declared instance (e.g.
+      // credentials persisted before this reconciliation existed, or settings
+      // storage was reset) gets an auto-created instance so the bot actually
+      // comes online after login. The settings service is optional at the
+      // composition level, so reach it through a scoped inject.
+      ctx.inject(['settings'], sctx => {
+        void ensureInstancesForCredentials(sctx, next).catch(() => {})
+      })
       if (router !== undefined && sameTopology(router, next)) return
       disposeRouter?.()
       router = undefined
@@ -115,4 +123,25 @@ function sameTopology(router: Router, next: ImChannelSection): boolean {
     .sort()
   const liveKinds = live.map(channel => channel.kind).sort()
   return liveKinds.length === wanted.length && liveKinds.every((kind, index) => kind === wanted[index])
+}
+
+/** Auto-create instances for platforms that have credentials but no row. */
+async function ensureInstancesForCredentials(ctx: Context, next: ImChannelSection): Promise<void> {
+  const KIND_LABELS: Record<ChannelKind, string> = { wechat: '微信', qq: 'QQ', feishu: '飞书', dingtalk: '钉钉' }
+  const patch: Record<string, { kind: ChannelKind; enabled: boolean; displayName: string }> = {}
+  let changed = false
+  for (const kind of ['wechat', 'qq', 'feishu', 'dingtalk'] as const) {
+    if (!isCredentialled(kind)) continue
+    const sameKind = Object.entries(next.channels).filter(([, v]) => v.kind === kind)
+    if (sameKind.length > 0) continue
+    const name = `${kind}-1`
+    patch[name] = { kind, enabled: true, displayName: `${KIND_LABELS[kind]}机器人 1` }
+    changed = true
+  }
+  if (!changed) return
+  try {
+    await ctx.settings.update(NS, { channels: patch })
+  } catch (error) {
+    ctx.logger.warn(`im-channel: 为已登录平台自动创建实例失败: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }

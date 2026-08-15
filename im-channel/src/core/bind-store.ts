@@ -107,3 +107,8 @@ export class BindStore {
     return true
   }
 }
+
+/** List all persisted binding rows (for status surfaces). */
+export function listBindings(): Array<{ kind: string; boundAt: string; sessionId: string }> {
+  return readStore().bindings.map(row => ({ kind: row.kind, boundAt: row.boundAt, sessionId: row.sessionId }))
+}

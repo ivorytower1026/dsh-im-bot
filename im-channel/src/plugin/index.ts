@@ -8,6 +8,7 @@ import { WechatChannel, loadWechatCredentials } from '../channels/wechat/index.t
 import { QqChannel, loadQqCredentials } from '../channels/qq/index.ts'
 import { FeishuChannel, loadFeishuCredentials } from '../channels/feishu/index.ts'
 import { DingtalkChannel, loadDingtalkCredentials } from '../channels/dingtalk/index.ts'
+import { LoginApi } from './login-api.ts'
 import type { ChannelKind, ImChannel } from '../core/channel.ts'
 
 export const name = 'im-channel'
@@ -61,6 +62,11 @@ function buildChannel(kind: ChannelKind): ImChannel {
 }
 
 export function apply(ctx: Context, config: ImChannelSection): void {
+  // Browser-facing login routes: /im-channel/login/start and /status.
+  ctx.inject(['webServer'], (wctx: Context) => {
+    new LoginApi(wctx).register()
+  })
+
   let current: ImChannelSection = config
   let router: Router | undefined
   let disposeRouter: (() => void) | undefined

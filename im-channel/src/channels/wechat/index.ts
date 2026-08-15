@@ -14,6 +14,7 @@ import type { ImChannel, ImUserId, InboundMessage, OutboundMessage, ReplyTarget 
 
 const FIXED_BASE_URL = 'https://ilinkai.weixin.qq.com'
 const DEFAULT_ILINK_BOT_TYPE = '3'
+export { DEFAULT_ILINK_BOT_TYPE }
 const QR_LONG_POLL_TIMEOUT_MS = 35_000
 const ACTIVE_LOGIN_TTL_MS = 5 * 60_000
 const MAX_QR_REFRESH_COUNT = 3
@@ -45,7 +46,7 @@ export function loadWechatCredentials(): WechatCredentials | undefined {
   return JSON.parse(readFileSync(path, 'utf8')) as WechatCredentials
 }
 
-function saveWechatCredentials(credentials: WechatCredentials): void {
+export function saveWechatCredentials(credentials: WechatCredentials): void {
   const path = credentialsPath()
   mkdirSync(join(path, '..'), { recursive: true })
   writeFileSync(path, `${JSON.stringify(credentials, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 })
@@ -77,13 +78,12 @@ interface GetUpdatesResp {
   longpolling_timeout_ms?: number
 }
 
-async function apiFetch(params: {
+export async function apiFetch(params: {
   endpoint: string
   body?: string
   token?: string
   timeoutMs?: number
-}): Promise<string> {
-  const controller = new AbortController()
+}): Promise<string> {  const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), params.timeoutMs ?? 15_000)
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }

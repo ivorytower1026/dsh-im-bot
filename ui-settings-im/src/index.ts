@@ -1,15 +1,10 @@
 /**
- * IM channels settings plugin. Node half: registers the locale dictionary
- * namespace; the browser half (src/client) registers the settings section.
+ * Bot Channel settings plugin. Node half: empty apply — this package exists
+ * for its `dsh.client` browser bundle (the Plugins-section "Bot Channel"
+ * tab); the loader row exists only so the client-modules scanner sees it.
  */
-import { en, zh } from './client/locales.ts'
-
 export const name = 'ui-settings-im'
 
-const NS = 'settings.im'
-
-export function apply(ctx: object & { locale?: { register: (ns: string, dict: object) => unknown } }): void {
-  ctx.locale?.register(NS, { zh, en })
-}
+export function apply(): void {}
 
 export { en, zh } from './client/locales.ts'

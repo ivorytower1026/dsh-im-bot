@@ -28,6 +28,9 @@
         "@deepseek-ai/dsh-api-remotes"
       ],
       "platform": "web"
+    },
+    "bundle": {
+      "patch": "cordis.patch.yml"
     }
   },
   "scripts": {
@@ -46,10 +49,12 @@
     "@deepseek-ai/dsh-client-schema-form": "link:D:/project/fork_project/deepseek-harness/packages/client/schema-form",
     "@deepseek-ai/dsh-client-ui-primitives": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-primitives",
     "@deepseek-ai/dsh-client-ui-settings": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-settings",
+    "@deepseek-ai/dsh-client-ui-settings-plugins": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-settings-plugins",
     "@deepseek-ai/dsh-client-ui-slots": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-slots",
     "@deepseek-ai/dsh-client-web-react": "link:D:/project/fork_project/deepseek-harness/packages/client/web-react",
     "@types/react": "~18.3.1",
     "react": "^18.2.0",
+    "tsdown": "^0.22.14",
     "typescript": "^5.9.3"
   }
 }

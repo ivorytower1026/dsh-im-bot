@@ -33,6 +33,9 @@ importers:
       '@deepseek-ai/dsh-brand':
         specifier: link:../../deepseek-harness/packages/util/brand
         version: link:../../deepseek-harness/packages/util/brand
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: link:D:/project/fork_project/deepseek-harness/packages/host/webserver
+        version: link:../../deepseek-harness/packages/host/webserver
       '@deepseek-ai/dsh-llm':
         specifier: link:../../deepseek-harness/packages/llm/llm
         version: link:../../deepseek-harness/packages/llm/llm

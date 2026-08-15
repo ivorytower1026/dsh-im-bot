@@ -1,41 +1,29 @@
-/** zh copy for the IM channels settings section. */
+/** zh copy for the Bot Channel tab. */
 export const zh = {
-  nav: 'IM 通道',
-  intro: '管理飞书、微信、QQ、钉钉通道实例。每个实例独立连接一个机器人；同一平台可建多个实例。',
-  empty: '还没有通道实例。点击下方添加。',
-  add: '添加通道',
-  addTitle: '添加 IM 通道',
-  name: '实例名（小写字母、数字、连字符）',
-  nameInvalid: '实例名只能包含小写字母、数字、连字符，且以字母开头。',
-  nameTaken: '该实例名已被占用。',
-  kind: '平台',
-  cancel: '取消',
-  create: '创建',
-  enable: '启用',
-  disable: '停用',
-  remove: '删除',
-  removeTitle: '删除通道',
-  removeConfirm: '确定删除实例 {name} 吗？已绑定该实例的用户不受影响，但新消息将无人应答。',
+  nav: 'Bot Channel',
+  intro: '选择一个平台，手机扫码即可创建/绑定机器人并接入 harness。',
+  cards: '平台',
+  'card.wechat': '微信',
+  'card.qq': 'QQ',
+  'card.feishu': '飞书',
+  'card.dingtalk': '钉钉',
+  'qr.waiting': '正在获取二维码…',
+  'qr.alt': '登录二维码',
+  'qr.confirmed': '登录成功，机器人已接入。',
 } as const
 
-/** en copy for the IM channels settings section. */
+/** en copy for the Bot Channel tab. */
 export const en = {
-  nav: 'IM Channels',
-  intro: 'Manage Feishu, WeChat, QQ, and DingTalk channel instances. Each instance connects one bot; a platform may have several.',
-  empty: 'No channel instances yet. Add one below.',
-  add: 'Add channel',
-  addTitle: 'Add IM channel',
-  name: 'Instance name (lowercase letters, digits, hyphens)',
-  nameInvalid: 'Instance names may only contain lowercase letters, digits, and hyphens, starting with a letter.',
-  nameTaken: 'That instance name is already taken.',
-  kind: 'Platform',
-  cancel: 'Cancel',
-  create: 'Create',
-  enable: 'Enable',
-  disable: 'Disable',
-  remove: 'Remove',
-  removeTitle: 'Remove channel',
-  removeConfirm: 'Remove instance {name}? Bound users keep their sessions, but new messages go unanswered.',
+  nav: 'Bot Channel',
+  intro: 'Pick a platform and scan the QR code from your phone to create/bind your bot.',
+  cards: 'Platform',
+  'card.wechat': 'WeChat',
+  'card.qq': 'QQ',
+  'card.feishu': 'Feishu',
+  'card.dingtalk': 'DingTalk',
+  'qr.waiting': 'Fetching QR code…',
+  'qr.alt': 'Login QR code',
+  'qr.confirmed': 'Logged in — your bot is connected.',
 } as const
 
 export type ImKey = keyof typeof zh

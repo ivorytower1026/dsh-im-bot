@@ -250,6 +250,8 @@ const ITEM_VOICE = 4
 export interface WechatChannelOptions {
   /** Called with the terminal-side login QR URL when credentials are missing. */
   onLoginRequest?: () => Promise<void>
+  /** Diagnostic sink for inbound messages (wired to the plugin logger). */
+  ctxLog?: (line: string) => void
 }
 
 export class WechatChannel implements ImChannel {
@@ -262,6 +264,10 @@ export class WechatChannel implements ImChannel {
   private readonly contextTokens = new Map<string, string>()
 
   constructor(private readonly options: WechatChannelOptions = {}) {}
+
+  private ctxLog(line: string): void {
+    this.options.ctxLog?.(line)
+  }
 
   isConfigured(): boolean {
     return loadWechatCredentials() !== undefined
@@ -335,6 +341,7 @@ export class WechatChannel implements ImChannel {
           if (message.context_token !== undefined) this.contextTokens.set(from, message.context_token)
           const text = textFromItems(message.item_list)
           if (text.length === 0) continue
+          this.ctxLog(`wechat inbound from=${from} text=${text.slice(0, 40)}`)
           this.handler?.({
             from: { kind: 'wechat', userId: from as ImUserId },
             text,

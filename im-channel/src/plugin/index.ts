@@ -62,14 +62,17 @@ function buildChannel(kind: ChannelKind): ImChannel {
 }
 
 export function apply(ctx: Context, config: ImChannelSection): void {
+  // The active bind passphrase, surfaced to the web UI through LoginApi.
+  const activePassphrase = { value: '' as string, issuedAt: 0 }
   // Browser-facing login routes: /im-channel/login/start and /status.
   ctx.inject(['webServer'], (wctx: Context) => {
-    new LoginApi(wctx).register()
+    new LoginApi(wctx, activePassphrase).register()
   })
 
   let current: ImChannelSection = config
   let router: Router | undefined
   let disposeRouter: (() => void) | undefined
+  const passphraseActive = activePassphrase
 
   installSettingsSection(ctx, NS, Config, config, {
     setSource: (source) => { current = source() },
@@ -104,6 +107,8 @@ export function apply(ctx: Context, config: ImChannelSection): void {
       const driver = new HarnessDriver(ctx, {})
       router = new Router({ channels, driver, store, config: { commandPrefix: next.commandPrefix } })
       const passphrase = store.issuePassphrase()
+      passphraseActive.value = passphrase
+      passphraseActive.issuedAt = Date.now()
       process.stdout.write(`\n[im-channel] 手机绑定口令（10 分钟内有效）：${passphrase}\n[im-channel] 在 IM 上发送 /bind ${passphrase} 完成绑定\n\n`)
       void ctx.effect(async function* () {
         await router?.start()

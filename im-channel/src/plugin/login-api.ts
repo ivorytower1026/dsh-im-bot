@@ -37,10 +37,21 @@ interface QrLoginSession extends QrLoginBridge {
 
 const SESSION_TTL_MS = 8 * 60_000
 
+/** Active passphrase shared from the plugin entry (mutable cell). */
+export interface ActivePassphrase {
+  value: string
+  issuedAt: number
+}
+
+const PASSPHRASE_TTL_MS = 10 * 60_000
+
 export class LoginApi {
   private session: QrLoginSession | undefined
 
-  constructor(private readonly ctx: Context) {}
+  constructor(
+    private readonly ctx: Context,
+    private readonly passphrase: ActivePassphrase = { value: '', issuedAt: 0 },
+  ) {}
 
   /** Register the /im-channel/login/* routes on the web server. */
   register(): void {
@@ -59,6 +70,26 @@ export class LoginApi {
       path: '/im-channel/bindings',
       handler: (_req: IncomingMessage, res: ServerResponse) => this.handleBindings(res),
     })
+    this.ctx.webServer.register({
+      kind: 'exact',
+      path: '/im-channel/bindings/remove',
+      handler: (req: IncomingMessage, res: ServerResponse) => void this.handleBindingRemove(req, res),
+    })
+  }
+
+  private async handleBindingRemove(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    try {
+      const body = await readJsonBody(req) as { kind?: string; userId?: string; sessionId?: string }
+      const { removeBinding } = await import('../core/bind-store.ts')
+      const match: { kind?: string; userId?: string; sessionId?: string } = {}
+      if (typeof body.kind === 'string') match.kind = body.kind
+      if (typeof body.userId === 'string') match.userId = body.userId
+      if (typeof body.sessionId === 'string') match.sessionId = body.sessionId
+      const removed = removeBinding(match)
+      respondJson(res, 200, { ok: true, removed })
+    } catch (error) {
+      respondJson(res, 500, { ok: false, error: messageOf(error) })
+    }
   }
 
   /**
@@ -86,9 +117,17 @@ export class LoginApi {
 
   private handleBindings(res: ServerResponse): void {
     // Read the persisted binding rows directly; each /bind adds one
-    // user-to-session row per platform bot.
+    // user-to-session row per platform bot. The passphrase rides along so
+    // the web UI can tell the user what to send after scanning.
     void this.readBindings().then(rows => {
-      respondJson(res, 200, { ok: true, bindings: rows, count: rows.length })
+      const fresh = this.passphrase.value !== '' && Date.now() - this.passphrase.issuedAt < PASSPHRASE_TTL_MS
+      respondJson(res, 200, {
+        ok: true,
+        bindings: rows,
+        count: rows.length,
+        passphrase: fresh ? this.passphrase.value : undefined,
+        passphraseExpiresInMs: fresh ? PASSPHRASE_TTL_MS - (Date.now() - this.passphrase.issuedAt) : undefined,
+      })
     })
   }
 

@@ -112,3 +112,15 @@ export class BindStore {
 export function listBindings(): Array<{ kind: string; boundAt: string; sessionId: string }> {
   return readStore().bindings.map(row => ({ kind: row.kind, boundAt: row.boundAt, sessionId: row.sessionId }))
 }
+
+/** Remove a binding by loose match (kind+userId, or sessionId alone). Returns true when a row was removed. */
+export function removeBinding(match: { kind?: string; userId?: string; sessionId?: string }): boolean {
+  const store = readStore()
+  const index = store.bindings.findIndex(row =>
+    (match.kind !== undefined && match.userId !== undefined && row.kind === match.kind && row.userId === match.userId)
+    || (match.sessionId !== undefined && row.sessionId === match.sessionId))
+  if (index < 0) return false
+  store.bindings.splice(index, 1)
+  writeStore(store)
+  return true
+}

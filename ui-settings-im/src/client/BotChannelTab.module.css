@@ -249,3 +249,56 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.bindingRemove {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, #c0392b 40%, transparent);
+  color: #c0392b;
+  background: transparent;
+  font-size: 0.82em;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bindingRemove:hover {
+  background: color-mix(in srgb, #c0392b 8%, transparent);
+}
+
+.passphraseCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--im-accent, #4a6cf7) 30%, transparent);
+  background: color-mix(in srgb, var(--im-accent, #4a6cf7) 6%, transparent);
+}
+
+.passphraseTitle {
+  font-weight: 600;
+}
+
+.passphraseHint {
+  font-size: 0.88em;
+  opacity: 0.75;
+}
+
+.passphraseCommand {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.95em;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--im-accent, #4a6cf7) 12%, transparent);
+  color: var(--im-accent, #4a6cf7);
+  cursor: pointer;
+  user-select: all;
+}
+
+.passphraseCopied {
+  color: #27ae60;
+  font-weight: 600;
+  width: 1em;
+}

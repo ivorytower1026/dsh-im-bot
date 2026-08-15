@@ -55,16 +55,42 @@ export function BotChannelTab(props: BotChannelTabProps) {
   const [login, setLogin] = useState<LoginStatus | undefined>(undefined)
   const [startError, setStartError] = useState<string | undefined>(undefined)
   const [bindings, setBindings] = useState<BindingRow[]>([])
+  const [passphrase, setPassphrase] = useState<string | undefined>(undefined)
+  const [copied, setCopied] = useState(false)
   const pollTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   const refreshBindings = async (): Promise<void> => {
     try {
       const response = await fetch('/im-channel/bindings')
-      const body = await response.json() as { ok: boolean; bindings: BindingRow[] }
-      if (body.ok) setBindings(body.bindings)
+      const body = await response.json() as { ok: boolean; bindings: BindingRow[]; passphrase?: string }
+      if (body.ok) {
+        setBindings(body.bindings)
+        setPassphrase(body.passphrase)
+      }
     } catch {
       // Transient fetch failure: keep the last list.
     }
+  }
+
+  const removeBinding = async (row: BindingRow): Promise<void> => {
+    try {
+      await fetch('/im-channel/bindings/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: row.sessionId }),
+      })
+      await refreshBindings()
+    } catch {
+      // Keep the list as-is on transient failure.
+    }
+  }
+
+  const copyBindCommand = (): void => {
+    if (passphrase === undefined) return
+    void navigator.clipboard.writeText(`/bind ${passphrase}`).then(() => {
+      setCopied(true)
+      setTimeout(() => { setCopied(false) }, 1500)
+    })
   }
 
   useEffect(() => {
@@ -201,6 +227,23 @@ export function BotChannelTab(props: BotChannelTabProps) {
           </div>
         </div>
       )}
+      {passphrase !== undefined && (
+        <div className={css.passphraseCard}>
+          <span className={css.passphraseTitle}>{t('passphrase.title')}</span>
+          <span className={css.passphraseHint}>{t('passphrase.hint')}</span>
+          <code
+            className={css.passphraseCommand}
+            role="button"
+            tabIndex={0}
+            onClick={copyBindCommand}
+            onKeyDown={e => { if (e.key === 'Enter') copyBindCommand() }}
+          >
+            /bind {passphrase}
+          </code>
+          <span className={css.passphraseCopied}>{copied ? '✓' : ''}</span>
+        </div>
+      )}
+
       <div className={css.bindings}>
         <h3 className={css.bindingsTitle}>{t('bindings.title')}（{bindings.length}）</h3>
         {bindings.length === 0 && <p className={css.bindingsEmpty}>{t('bindings.empty')}</p>}
@@ -211,6 +254,7 @@ export function BotChannelTab(props: BotChannelTabProps) {
                 <th>{t('bindings.kind')}</th>
                 <th>{t('bindings.session')}</th>
                 <th>{t('bindings.boundAt')}</th>
+                <th aria-hidden="true" />
               </tr>
             </thead>
             <tbody>
@@ -219,6 +263,11 @@ export function BotChannelTab(props: BotChannelTabProps) {
                   <td><span className={css.bindingKind}>{KIND_LABELS[row.kind] ?? row.kind}</span></td>
                   <td className={css.bindingSession}>{row.sessionId}</td>
                   <td>{row.boundAt.replace('T', ' ').slice(0, 19)}</td>
+                  <td>
+                    <button type="button" className={css.bindingRemove} onClick={() => { void removeBinding(row) }}>
+                      {t('bindings.remove')}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

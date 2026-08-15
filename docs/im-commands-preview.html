@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IM 系统命令 — 交互预览</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f3f7; padding: 24px; color: #1a1a1a; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 20px; margin-bottom: 6px; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .phone { background: #ededed; border-radius: 16px; padding: 16px; margin-bottom: 28px; border: 1px solid #e0e0e0; }
+  .phone-title { text-align: center; font-size: 13px; color: #777; margin-bottom: 12px; }
+  .msg { max-width: 82%; margin-bottom: 10px; padding: 9px 13px; border-radius: 10px; font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
+  .user { background: #95ec69; margin-left: auto; border-top-right-radius: 2px; }
+  .bot { background: #fff; border-top-left-radius: 2px; }
+  .bot code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 12.5px; color: #c0392b; font-family: ui-monospace, Consolas, monospace; }
+  .divider { text-align: center; color: #aaa; font-size: 12px; margin: 18px 0 12px; }
+  .cmd-desc { background: #fff; border-radius: 12px; padding: 18px 20px; border: 1px solid #e5e5e5; }
+  .cmd-desc h2 { font-size: 15px; margin-bottom: 12px; }
+  .cmd-desc table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .cmd-desc td { padding: 7px 4px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  .cmd-desc td:first-child { white-space: nowrap; font-family: ui-monospace, Consolas, monospace; color: #0a6cff; width: 130px; }
+  .cmd-desc tr:last-child td { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>IM 系统命令交互预览</h1>
+  <p class="sub">微信 / QQ / 飞书 / 钉钉 通用。斜杠命令不进入 agent，直接由 router 处理；中文命令有英文别名。</p>
+
+  <div class="phone">
+    <div class="phone-title">— 微信 · 机器人会话 —</div>
+
+    <div class="msg bot">你好！我是你的 harness 机器人 🤖<br><br>首次使用请发送 <code>/bind &lt;口令&gt;</code> 绑定会话（口令在启动 harness 的终端显示，10 分钟内有效）。<br><br>发送 <code>/帮助</code> 查看全部命令。</div>
+
+    <div class="msg user">你好</div>
+    <div class="msg bot">👋 还没有绑定会话。<br><br>请发送 <code>/bind &lt;口令&gt;</code> 绑定，口令在启动 harness 的终端显示（10 分钟内有效）。<br>发送 <code>/帮助</code> 查看全部命令。</div>
+
+    <div class="divider">··· 用户发送 /bind BIND-2F593C ···</div>
+
+    <div class="msg bot">✅ 绑定成功！会话 <code>d4f2…a91c</code> 已就绪，直接发消息开始对话。<br><br>发送 <code>/帮助</code> 查看可用命令。</div>
+
+    <div class="msg user">/帮助</div>
+    <div class="msg bot">📖 系统命令<br>──────────────────<br><code>/帮助</code> — 查看这份说明<br><code>/状态</code> — 工作区、模型、任务状态<br><code>/新建</code> — 开始新的会话（清空上下文）<br><code>/会话</code> — 列出最近会话<br><code>/切换 N</code> — 切换到第 N 个会话<br><code>/项目</code> — 查看 / 切换工作区<br><code>/模型</code> — 查看 / 切换模型<br><code>/模式</code> — 切换运行模式<br><code>/回复</code> — 切换回复详细程度<br><code>/轨迹 [N]</code> — 查看最近第 N 轮的执行轨迹<br><code>/取消</code> — 中断当前正在执行的任务<br><code>/bind &lt;口令&gt;</code> — 绑定会话<br><code>/unbind</code> — 解绑当前聊天<br>──────────────────<br>英文别名：/help /status /new /sessions /switch /project /model /mode /reply /trace /cancel</div>
+
+    <div class="msg user">/状态</div>
+    <div class="msg bot">📊 当前状态<br>──────────────────<br>工作区：D:\project\fork_project\deepseek-harness<br>模型：glm-5.3（glm）<br>模式：plan ✕（普通模式）<br>会话：d4f2…a91c（3 轮对话）<br>任务：空闲<br>绑定：2026-08-15 10:32</div>
+
+    <div class="msg user">/新建</div>
+    <div class="msg bot">🆕 已开始新会话 <code>8b1e…77f0</code>。上下文已清空，直接发消息开始新任务。</div>
+
+    <div class="msg user">/模型</div>
+    <div class="msg bot">🤖 当前模型：glm-5.3（glm）<br>──────────────────<br>可切换：<br>1. glm-5.3（glm）⬅ 当前<br>2. glm-5.2-highspeed（glm）<br>──────────────────<br>发送 <code>/模型 N</code> 或 <code>/模型 名称</code> 切换。</div>
+
+    <div class="msg user">/轨迹</div>
+    <div class="msg bot">🧵 最近一轮轨迹（第 3 轮，14.2s）<br>──────────────────<br>01 💭 思考：分析绑定问题…<br>02 🔧 Edit router.ts（+12 −3）<br>03 🔧 Build im-channel ✓<br>04 ✅ 回复已发送（418 字）<br>──────────────────<br>发送 <code>/轨迹 2</code> 查看更早轮次。</div>
+
+    <div class="msg user">/取消</div>
+    <div class="msg bot">⏹ 已中断当前任务（第 3 轮，执行到一半）。</div>
+  </div>
+
+  <div class="cmd-desc">
+    <h2>命令 → harness 操作映射</h2>
+    <table>
+      <tr><td>/帮助 /help</td><td>静态帮助文本，router 直接返回</td></tr>
+      <tr><td>/状态 /status</td><td>读 settings（工作区/模型）+ 当前会话轮数 + 是否有任务在跑</td></tr>
+      <tr><td>/新建 /new</td><td>drivers.startSession() 创建新会话并重新绑定，同 /bind 的会话替换</td></tr>
+      <tr><td>/会话 /sessions</td><td>列出绑定历史中最近 N 个会话（标题 + 相对时间）</td></tr>
+      <tr><td>/切换 N /switch</td><td>切换绑定到第 N 个历史会话</td></tr>
+      <tr><td>/项目 /project</td><td>无参=显示当前工作区；带参=切换（需 harness 支持多工作区）</td></tr>
+      <tr><td>/模型 /model</td><td>无参=列出 agent-default-model 可选模型；带参=写 settings 切换</td></tr>
+      <tr><td>/模式 /mode</td><td>切换 plan/normal 运行模式（写会话 agentOptions）</td></tr>
+      <tr><td>/回复 /reply</td><td>轮换 简洁/标准/详细 回复详细程度（影响最终回复的摘要策略）</td></tr>
+      <tr><td>/轨迹 /trace</td><td>任务 #8：读取最近轮次的 tool/call、tool/result 事件拼装</td></tr>
+      <tr><td>/取消 /cancel</td><td>中断 inflight 轮次（agent.followup 的取消句柄）</td></tr>
+      <tr><td>/bind /unbind</td><td>已有（口令绑定 / 解绑）</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>

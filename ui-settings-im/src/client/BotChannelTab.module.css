@@ -63,11 +63,6 @@
   font-size: 0.95em;
 }
 
-.cardHint {
-  font-size: 0.78em;
-  opacity: 0.55;
-}
-
 .detail {
   display: grid;
   grid-template-columns: minmax(0, 300px) minmax(0, 1fr);

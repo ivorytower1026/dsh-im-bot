@@ -26,7 +26,6 @@ interface QrLoginSession extends QrLoginBridge {
 }
 
 const SESSION_TTL_MS = 8 * 60_000
-const INFLIGHT_MIN_GAP_MS = 30_000
 
 export class LoginApi {
   private session: QrLoginSession | undefined
@@ -56,17 +55,26 @@ export class LoginApi {
         return
       }
       const loginKind: LoginKind = kind as LoginKind
+      // A new card click is explicit intent to switch: retire any prior
+      // pending session instead of rejecting the new login.
       const prior = this.session
-      if (prior !== undefined && prior.status === 'pending' && Date.now() - prior.startedAt < INFLIGHT_MIN_GAP_MS) {
-        // One login in flight at a time; the UI may retry the same platform.
-        respondJson(res, 409, { ok: false, error: 'a login is already in flight' })
-        return
+      if (prior !== undefined && prior.status === 'pending') {
+        prior.status = 'error'
+        prior.error = 'superseded by a new login'
       }
       const session: QrLoginSession = { kind: loginKind, startedAt: Date.now(), qrUrl: undefined, status: 'pending', error: undefined }
       this.session = session
       // Start the platform login out-of-band; the QR URL and terminal state
       // land on the session record for status polling.
       void this.runLogin(loginKind, session)
+      // Some platform bridges (notably QQ) poll forever without timing out;
+      // cap the session so the UI stops waiting after the TTL.
+      setTimeout(() => {
+        if (this.session === session && session.status === 'pending') {
+          session.status = 'error'
+          session.error = 'login timed out'
+        }
+      }, SESSION_TTL_MS).unref()
       // The QR URL arrives asynchronously from the platform; poll status.
       respondJson(res, 200, { ok: true })
     } catch (error) {

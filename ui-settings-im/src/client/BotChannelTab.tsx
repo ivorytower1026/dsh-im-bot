@@ -119,7 +119,6 @@ export function BotChannelTab(props: BotChannelTabProps) {
             >
               <span className={css.cardIcon}><Mark /></span>
               <span className={css.cardName}>{label}</span>
-              <span className={css.cardHint}>{kind}</span>
             </button>
           )
         })}

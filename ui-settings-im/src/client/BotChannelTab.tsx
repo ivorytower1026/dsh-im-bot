@@ -1,11 +1,14 @@
 /**
- * Bot Channel tab content: four platform cards. Selecting a card starts a QR
- * login for that platform via the im-channel host routes, renders the QR
- * image, and polls the login status until confirmed.
+ * Bot Channel tab content: four platform cards in one row, each with its
+ * brand mark. Selecting a card starts a QR login via the im-channel host
+ * routes; the detail area below splits into the QR (left) and the
+ * platform-specific operation steps (right).
  */
 
 import { useEffect, useRef, useState } from 'react'
 import type { Kind } from './store.ts'
+import { DingtalkMark, FeishuMark, QqMark, WechatMark } from './platform-marks.tsx'
+import css from './BotChannelTab.module.css'
 
 /** Injected dependencies (slot `inject`). */
 export interface BotChannelTabInjected {
@@ -23,6 +26,13 @@ interface LoginStatus {
 }
 
 const POLL_INTERVAL_MS = 1500
+
+const CARD_MARKS = {
+  wechat: WechatMark,
+  qq: QqMark,
+  feishu: FeishuMark,
+  dingtalk: DingtalkMark,
+} as const
 
 export function BotChannelTab(props: BotChannelTabProps) {
   const t = props.t
@@ -87,46 +97,76 @@ export function BotChannelTab(props: BotChannelTabProps) {
     { kind: 'dingtalk', label: t('card.dingtalk') },
   ]
 
+  const stepKeys: Array<`step.${Kind}.${1 | 2 | 3 | 4}` | `note.${Kind}.${1 | 2 | 3 | 4}`> = selected === undefined
+    ? []
+    : (['1', '2', '3', '4'] as const).flatMap(n => [`step.${selected}.${n}`, `note.${selected}.${n}`] as Array<`step.${Kind}.${typeof n}` | `note.${Kind}.${typeof n}`>)
+
   return (
-    <div>
-      <p>{t('intro')}</p>
-      <div role="radiogroup" aria-label={t('cards')} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-        {cards.map(({ kind, label }) => (
-          <button
-            key={kind}
-            type="button"
-            role="radio"
-            aria-checked={selected === kind}
-            onClick={() => selectCard(kind)}
-            style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-              padding: '20px 12px', borderRadius: 8, cursor: 'pointer',
-              border: selected === kind ? '2px solid var(--accent, #4a6cf7)' : '1px solid rgba(128,128,128,.35)',
-            }}
-          >
-            <strong>{label}</strong>
-            <span style={{ opacity: 0.65, fontSize: '0.85em' }}>{kind}</span>
-          </button>
-        ))}
+    <div className={css.section}>
+      <p className={css.intro}>{t('intro')}</p>
+      <div role="radiogroup" aria-label={t('cards')} className={css.cards}>
+        {cards.map(({ kind, label }) => {
+          const Mark = CARD_MARKS[kind]
+          return (
+            <button
+              key={kind}
+              type="button"
+              role="radio"
+              aria-checked={selected === kind}
+              data-selected={selected === kind ? 'true' : undefined}
+              className={css.card}
+              onClick={() => selectCard(kind)}
+            >
+              <span className={css.cardIcon}><Mark /></span>
+              <span className={css.cardName}>{label}</span>
+              <span className={css.cardHint}>{kind}</span>
+            </button>
+          )
+        })}
       </div>
 
       {selected !== undefined && (
-        <div style={{ marginTop: 16 }}>
-          {startError !== undefined && <p role="alert" style={{ color: '#c0392b' }}>{startError}</p>}
-          {login === undefined && <p>{t('qr.waiting')}</p>}
-          {login?.qrUrl !== undefined && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(login.qrUrl)}`}
-                alt={t('qr.alt')}
-                width={240}
-                height={240}
-              />
-              <span style={{ wordBreak: 'break-all', maxWidth: 360, opacity: 0.6, fontSize: '0.8em' }}>{login.qrUrl}</span>
-            </div>
-          )}
-          {login?.status === 'confirmed' && <p style={{ color: '#27ae60' }}>{t('qr.confirmed')}</p>}
-          {login?.status === 'error' && <p role="alert" style={{ color: '#c0392b' }}>{login.error}</p>}
+        <div className={css.detail}>
+          <div className={css.qrPanel} data-state={login?.status ?? (startError !== undefined ? 'error' : 'pending')}>
+            {startError !== undefined && <p role="alert" className={css.qrError}>{startError}</p>}
+            {startError === undefined && login?.qrUrl === undefined && (
+              <div className={css.qrSpinner}>
+                <span className={css.qrSpinnerRing} />
+                <span>{t('qr.waiting')}</span>
+              </div>
+            )}
+            {login?.qrUrl !== undefined && (
+              <>
+                <img
+                  className={css.qrImage}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(login.qrUrl)}`}
+                  alt={t('qr.alt')}
+                  width={240}
+                  height={240}
+                />
+                <span className={css.qrUrl}>{login.qrUrl}</span>
+              </>
+            )}
+            {login?.status === 'confirmed' && <p className={css.qrOk}>{t('qr.confirmed')}</p>}
+            {login?.status === 'error' && <p role="alert" className={css.qrError}>{login.error}</p>}
+          </div>
+
+          <div className={css.stepsPanel}>
+            <h3 className={css.stepsTitle}>{t(`steps.title.${selected}`)}</h3>
+            <ol className={css.steps}>
+              {stepKeys.length > 0 && stepKeys.map(key => key.startsWith('step.')
+                ? (
+                    <li key={key} className={css.step}>
+                      <span className={css.stepNumber} aria-hidden="true" />
+                      <span className={css.stepBody}>
+                        <span className={css.stepText}>{t(key)}</span>
+                      </span>
+                    </li>
+                  )
+                : null)}
+            </ol>
+            {selected === 'wechat' && <p className={css.stepNote}>{t('note.wechat.verifycode')}</p>}
+          </div>
         </div>
       )}
     </div>

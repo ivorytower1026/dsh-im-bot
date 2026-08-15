@@ -1,0 +1,209 @@
+/* Bot Channel tab: platform cards row + QR/steps split layout. */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.intro {
+  margin: 0;
+  opacity: 0.75;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 720px) {
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, currentColor 30%, transparent);
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.card:active {
+  transform: scale(0.98);
+}
+
+.card[data-selected='true'] {
+  border: 2px solid var(--im-accent, #4a6cf7);
+  background: color-mix(in srgb, var(--im-accent, #4a6cf7) 8%, transparent);
+}
+
+.cardIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+
+.cardName {
+  font-weight: 600;
+  font-size: 0.95em;
+}
+
+.cardHint {
+  font-size: 0.78em;
+  opacity: 0.55;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+.qrPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, currentColor 18%, transparent);
+  min-height: 300px;
+  justify-content: center;
+}
+
+.qrPanel[data-state='confirmed'] {
+  border-style: solid;
+  border-color: #27ae60;
+}
+
+.qrPanel[data-state='error'] {
+  border-style: solid;
+  border-color: #c0392b;
+}
+
+.qrImage {
+  border-radius: 8px;
+  background: #fff;
+  padding: 6px;
+}
+
+.qrSpinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.6;
+}
+
+.qrSpinnerRing {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-top-color: currentColor;
+  animation: qrSpin 0.9s linear infinite;
+}
+
+@keyframes qrSpin {
+  to { transform: rotate(360deg); }
+}
+
+.qrUrl {
+  max-width: 260px;
+  word-break: break-all;
+  font-size: 0.72em;
+  opacity: 0.5;
+  text-align: center;
+}
+
+.qrOk {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.qrError {
+  color: #c0392b;
+}
+
+.stepsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stepsTitle {
+  font-weight: 600;
+  margin: 0;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  counter-increment: step;
+}
+
+.stepNumber {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.78em;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--im-accent, #4a6cf7) 16%, transparent);
+  color: var(--im-accent, #4a6cf7);
+}
+
+.stepNumber::before {
+  content: counter(step);
+}
+
+.stepBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.92em;
+}
+
+.stepText {
+  opacity: 0.9;
+}
+
+.stepNote {
+  font-size: 0.82em;
+  opacity: 0.55;
+}

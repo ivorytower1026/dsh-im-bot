@@ -3,6 +3,8 @@
 把你的 **微信 / 飞书** 变成 DeepSeek Harness（dsh）智能体的入口：手机扫码创建机器人，
 在 IM 里直接选项目、发消息、调用 harness 智能体的全部工具能力。
 
+![手机连接设置页](docs/mobile-connect.png)
+
 包含两个包：
 
 | 包 | 作用 |

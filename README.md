@@ -33,6 +33,15 @@ curl -fsSL https://raw.githubusercontent.com/ivorytower1026/dsh-im-bot/main/inst
 
 脚本会自动写入 web profile、安装两个包并注册 bundle，可重复执行（用于升级）。完成后重启 `dsh web` 即可。
 
+重启后终端出现下面的日志，说明插件加载成功、两个渠道都已连接：
+
+```
+[info]: [ 'client ready' ]
+[info]: [ 'event-dispatch is ready' ]
+[im-channel] feishu 长连接已建立
+[im-channel] wechat getupdates ret=undefined errcode=undefined msgs=0 bufLen=104
+```
+
 <details>
 <summary>手动安装（等价步骤）</summary>
 

@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Kind } from './store.ts'
 import { DingtalkMark, FeishuMark, QqMark, WechatMark } from './platform-marks.tsx'
+import { qrSvgDataUrl } from './qr.ts'
 import css from './BotChannelTab.module.css'
 
 /** Injected dependencies (slot `inject`). */
@@ -138,12 +139,11 @@ export function BotChannelTab(props: BotChannelTabProps) {
               <>
                 <img
                   className={css.qrImage}
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(login.qrUrl)}`}
+                  src={qrSvgDataUrl(login.qrUrl)}
                   alt={t('qr.alt')}
                   width={240}
                   height={240}
                 />
-                <span className={css.qrUrl}>{login.qrUrl}</span>
               </>
             )}
             {login?.status === 'confirmed' && <p className={css.qrOk}>{t('qr.confirmed')}</p>}

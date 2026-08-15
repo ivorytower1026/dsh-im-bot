@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      qrcode-generator:
+        specifier: ^2.0.4
+        version: 2.0.4
     devDependencies:
       '@deepseek-ai/dsh-api-remotes':
         specifier: link:D:/project/fork_project/deepseek-harness/packages/api/remotes
@@ -352,6 +356,9 @@ packages:
     resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
     engines: {node: '>=12'}
 
+  qrcode-generator@2.0.4:
+    resolution: {integrity: sha512-mZSiP6RnbHl4xL2Ap5HfkjLnmxfKcPWpWe/c+5XxCuetEenqmNFf1FH/ftXPCtFG5/TDobjsjz6sSNL0Sr8Z9g==}
+
   quansync@1.0.0:
     resolution: {integrity: sha512-5xZacEEufv3HSTPQuchrvV6soaiACMFnq1H8wkVioctoH3TRha9Sz66lOxRwPK/qZj7HPiSveih9yAyh98gvqA==}
 
@@ -619,6 +626,8 @@ snapshots:
   obug@2.1.4: {}
 
   picomatch@4.0.5: {}
+
+  qrcode-generator@2.0.4: {}
 
   quansync@1.0.0: {}
 

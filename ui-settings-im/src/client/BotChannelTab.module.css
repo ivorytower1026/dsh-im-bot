@@ -125,14 +125,6 @@
   to { transform: rotate(360deg); }
 }
 
-.qrUrl {
-  max-width: 260px;
-  word-break: break-all;
-  font-size: 0.72em;
-  opacity: 0.5;
-  text-align: center;
-}
-
 .qrOk {
   color: #27ae60;
   font-weight: 600;

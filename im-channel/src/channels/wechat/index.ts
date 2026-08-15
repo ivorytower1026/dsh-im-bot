@@ -78,6 +78,18 @@ interface GetUpdatesResp {
   longpolling_timeout_ms?: number
 }
 
+// iLink app identity headers required by every request (upstream
+// openclaw-weixin package.json ilink_appid + encoded client version).
+const ILINK_APP_ID = 'bot'
+/** 2.4.6 -> (2<<16)|(4<<8)|6 */
+const ILINK_APP_CLIENT_VERSION = String((2 << 16) | (4 << 8) | 6)
+
+function randomWechatUin(): string {
+  const uint32 = randomUUID().slice(0, 8)
+  const num = Number.parseInt(uint32, 16) >>> 0
+  return Buffer.from(String(num), 'utf8').toString('base64')
+}
+
 export async function apiFetch(params: {
   endpoint: string
   body?: string
@@ -86,8 +98,16 @@ export async function apiFetch(params: {
 }): Promise<string> {  const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), params.timeoutMs ?? 15_000)
   try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (params.token?.trim()) headers.Authorization = `Bearer ${params.token.trim()}`
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'iLink-App-Id': ILINK_APP_ID,
+      'iLink-App-ClientVersion': ILINK_APP_CLIENT_VERSION,
+    }
+    if (params.token?.trim()) {
+      headers.Authorization = `Bearer ${params.token.trim()}`
+      headers.AuthorizationType = 'ilink_bot_token'
+      headers['X-WECHAT-UIN'] = randomWechatUin()
+    }
     const init: RequestInit = {
       method: params.body === undefined ? 'GET' : 'POST',
       headers,
@@ -322,6 +342,7 @@ export class WechatChannel implements ImChannel {
     while (!signal.aborted) {
       try {
         const resp = await getUpdates({ buf, token: credentials.botToken, timeoutMs: UPDATES_LONG_POLL_TIMEOUT_MS, signal })
+        this.ctxLog(`wechat getupdates ret=${resp.ret} errcode=${resp.errcode} msgs=${resp.msgs?.length ?? 0} bufLen=${resp.get_updates_buf?.length ?? 0}`)
         const isApiError = (resp.ret !== undefined && resp.ret !== 0) || (resp.errcode !== undefined && resp.errcode !== 0)
         if (isApiError) {
           failures += 1

@@ -52,9 +52,10 @@ function isCredentialled(kind: ChannelKind): boolean {
 }
 
 /** Build one channel instance from its declared config. */
-function buildChannel(kind: ChannelKind): ImChannel {
+function buildChannel(kind: ChannelKind, ctx: Context): ImChannel {
+  const log = (line: string): void => { process.stdout.write(`[im-channel] ${line}\n`) }
   switch (kind) {
-    case 'wechat': return new WechatChannel()
+    case 'wechat': return new WechatChannel({ ctxLog: log })
     case 'qq': return new QqChannel()
     case 'feishu': return new FeishuChannel()
     case 'dingtalk': return new DingtalkChannel()
@@ -99,7 +100,7 @@ export function apply(ctx: Context, config: ImChannelSection): void {
           ctx.logger.warn(`im-channel: 实例 ${name}（${instance.kind}）缺少登录凭证，跳过；请先完成该平台的登录/配置`)
           continue
         }
-        const channel = buildChannel(instance.kind)
+        const channel = buildChannel(instance.kind, ctx)
         channels.push(channel)
       }
       if (channels.length === 0) return

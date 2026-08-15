@@ -51,6 +51,14 @@ cd ~/.dsh/profiles/web && pnpm add \
 
 ## 使用
 
+### 微信
+
+![微信绑定成功](docs/wechat-bound.jpg)
+
+### 飞书
+
+![飞书绑定成功](docs/feishu-bound.jpg)
+
 1. 打开网页 → 设置 → 插件 → **手机连接**。
 2. 点微信或飞书卡片，用手机扫码（二维码可点击刷新）。
 3. 扫码成功后页面会提示发送 `/bind`。

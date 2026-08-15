@@ -79,10 +79,13 @@ export function BotChannelTab(props: BotChannelTabProps) {
   }
 
   useEffect(() => {
-    // Bindings load on tab open (list + per-card counts).
+    // Bindings load on tab open (list + per-card counts), and the WeChat card
+    // is pre-selected so its QR is already up when the tab opens.
     void refreshBindings()
+    selectCard('wechat')
     const interval = setInterval(() => { void refreshBindings() }, 10_000)
     return () => { clearInterval(interval); if (pollTimer.current !== undefined) clearInterval(pollTimer.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const stopPolling = (): void => {

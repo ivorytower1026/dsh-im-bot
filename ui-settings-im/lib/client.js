@@ -2597,43 +2597,43 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var BotChannelTab_module_css_default = {
-			"intro": "eiGEEq_intro",
-			"card": "eiGEEq_card",
-			"bindingRemove": "eiGEEq_bindingRemove",
-			"stepText": "eiGEEq_stepText",
-			"section": "eiGEEq_section",
-			"cardIcon": "eiGEEq_cardIcon",
-			"bindings": "eiGEEq_bindings",
-			"stepBody": "eiGEEq_stepBody",
-			"qrError": "eiGEEq_qrError",
-			"step": "eiGEEq_step",
-			"passphraseHint": "eiGEEq_passphraseHint",
-			"qrRefreshButton": "eiGEEq_qrRefreshButton",
-			"bindingsTitle": "eiGEEq_bindingsTitle",
-			"detail": "eiGEEq_detail",
-			"stepsTitle": "eiGEEq_stepsTitle",
-			"cards": "eiGEEq_cards",
-			"bindingsEmpty": "eiGEEq_bindingsEmpty",
-			"passphraseCommand": "eiGEEq_passphraseCommand",
-			"bindingSession": "eiGEEq_bindingSession",
-			"cardCount": "eiGEEq_cardCount",
-			"qrPanel": "eiGEEq_qrPanel",
-			"passphraseCard": "eiGEEq_passphraseCard",
-			"stepNumber": "eiGEEq_stepNumber",
 			"qrRefreshHint": "eiGEEq_qrRefreshHint",
+			"section": "eiGEEq_section",
 			"steps": "eiGEEq_steps",
-			"qrImage": "eiGEEq_qrImage",
-			"qrClickArea": "eiGEEq_qrClickArea",
-			"qrSpinnerRing": "eiGEEq_qrSpinnerRing",
-			"qrSpin": "eiGEEq_qrSpin",
-			"stepsPanel": "eiGEEq_stepsPanel",
-			"qrOk": "eiGEEq_qrOk",
-			"qrSpinner": "eiGEEq_qrSpinner",
-			"cardName": "eiGEEq_cardName",
-			"bindingsTable": "eiGEEq_bindingsTable",
 			"stepNote": "eiGEEq_stepNote",
+			"stepsTitle": "eiGEEq_stepsTitle",
+			"qrSpinner": "eiGEEq_qrSpinner",
+			"bindingsTitle": "eiGEEq_bindingsTitle",
+			"cardName": "eiGEEq_cardName",
+			"detail": "eiGEEq_detail",
+			"qrImage": "eiGEEq_qrImage",
+			"qrError": "eiGEEq_qrError",
+			"cards": "eiGEEq_cards",
+			"qrSpin": "eiGEEq_qrSpin",
+			"qrOk": "eiGEEq_qrOk",
+			"qrSpinnerRing": "eiGEEq_qrSpinnerRing",
+			"passphraseCommand": "eiGEEq_passphraseCommand",
+			"stepBody": "eiGEEq_stepBody",
+			"qrPanel": "eiGEEq_qrPanel",
+			"cardIcon": "eiGEEq_cardIcon",
+			"stepText": "eiGEEq_stepText",
+			"bindingsEmpty": "eiGEEq_bindingsEmpty",
+			"bindingsTable": "eiGEEq_bindingsTable",
+			"passphraseTitle": "eiGEEq_passphraseTitle",
+			"bindings": "eiGEEq_bindings",
+			"bindingRemove": "eiGEEq_bindingRemove",
+			"step": "eiGEEq_step",
+			"passphraseCard": "eiGEEq_passphraseCard",
+			"passphraseHint": "eiGEEq_passphraseHint",
+			"cardCount": "eiGEEq_cardCount",
+			"intro": "eiGEEq_intro",
+			"stepsPanel": "eiGEEq_stepsPanel",
+			"qrClickArea": "eiGEEq_qrClickArea",
+			"card": "eiGEEq_card",
+			"stepNumber": "eiGEEq_stepNumber",
+			"qrRefreshButton": "eiGEEq_qrRefreshButton",
 			"bindingKind": "eiGEEq_bindingKind",
-			"passphraseTitle": "eiGEEq_passphraseTitle"
+			"bindingSession": "eiGEEq_bindingSession"
 		};
 		//#endregion
 		//#region src/client/BotChannelTab.tsx
@@ -2678,6 +2678,7 @@ window.__ModuleLoader__.load({
 			};
 			(0, react.useEffect)(() => {
 				refreshBindings();
+				selectCard("wechat");
 				const interval = setInterval(() => {
 					refreshBindings();
 				}, 1e4);

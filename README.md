@@ -25,33 +25,27 @@ dsh web
 
 ### 第二步：一条命令安装本插件
 
-在 harness 运行机器上执行（写入 web profile 并安装两个包）：
+```sh
+curl -fsSL https://raw.githubusercontent.com/ivorytower1026/dsh-im-bot/main/install.mjs | node
+```
+
+（Windows PowerShell：`irm https://raw.githubusercontent.com/ivorytower1026/dsh-im-bot/main/install.mjs | node -`）
+
+脚本会自动写入 web profile、安装两个包并注册 bundle，可重复执行（用于升级）。完成后重启 `dsh web` 即可。
+
+<details>
+<summary>手动安装（等价步骤）</summary>
 
 ```sh
 cd ~/.dsh/profiles/web && pnpm add \
-  "github:ivorytower1026/dsh-im-bot#main&path:/im-channel" \
-  "github:ivorytower1026/dsh-im-bot#main&path:/ui-settings-im" \
-  --save-peer
+  "git+https://github.com/ivorytower1026/dsh-im-bot.git#main&path:/im-channel" \
+  "git+https://github.com/ivorytower1026/dsh-im-bot.git#main&path:/ui-settings-im"
 ```
 
-然后把两个包加入 profile 的 bundle 列表（`~/.dsh/profiles/web/package.json`）：
+然后把两个包名（`@dsh-extra/im-channel`、`@dsh-extra/dsh-client-ui-settings-im`）加入
+`~/.dsh/profiles/web/package.json` 的 `dsh.profile.bundles` 列表，重启 `dsh web`。
 
-```json
-{
-  "dsh": {
-    "profile": {
-      "bundles": [
-        "@deepseek-ai/dsh-base",
-        "@deepseek-ai/dsh-web-app",
-        "@dsh-extra/im-channel",
-        "@dsh-extra/dsh-client-ui-settings-im"
-      ]
-    }
-  }
-}
-```
-
-重启 `dsh web` 即完成。
+</details>
 
 ## 使用
 

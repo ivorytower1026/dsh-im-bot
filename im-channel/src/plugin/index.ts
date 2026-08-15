@@ -109,7 +109,7 @@ export function apply(ctx: Context, config: ImChannelSection): void {
       const passphrase = store.issuePassphrase()
       passphraseActive.value = passphrase
       passphraseActive.issuedAt = Date.now()
-      process.stdout.write(`\n[im-channel] 手机绑定口令（10 分钟内有效）：${passphrase}\n[im-channel] 在 IM 上发送 /bind ${passphrase} 完成绑定\n\n`)
+      process.stdout.write(`\n[im-channel] 手机绑定口令（10 分钟内有效）：${passphrase}\n[im-channel] 在 IM 上发送 /bind ${passphrase} 完成绑定（网页 Bot Channel 页也会显示）\n\n`)
       void ctx.effect(async function* () {
         await router?.start()
         yield () => { void router?.stop() }

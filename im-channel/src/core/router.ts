@@ -70,7 +70,7 @@ export class Router {
     const sessionId = this.deps.store.sessionIdFor(message.from)
     if (sessionId === undefined) {
       await channel.send(target, {
-        text: '尚未绑定会话。请发送 /bind 加启动时显示的口令完成绑定，例如：/bind BIND-3F2A',
+        text: '还没有绑定会话。请发送 /bind 加网页 Bot Channel 页显示的 6 位口令完成绑定，例如：/bind 483201',
       })
       return
     }

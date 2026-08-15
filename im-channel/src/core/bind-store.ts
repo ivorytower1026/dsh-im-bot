@@ -26,7 +26,6 @@ interface Passphrase {
 }
 
 const PASSPHRASE_TTL_MS = 10 * 60 * 1000
-const PASSPHRASE_PREFIX = 'BIND'
 
 function storePath(): string {
   return join(homedir(), '.dsh', 'im-channel', 'bindings.json')
@@ -49,9 +48,11 @@ export class BindStore {
 
   /** Generate a fresh one-time passphrase (invalidates any previous). */
   issuePassphrase(now = Date.now()): string {
-    const body = randomBytes(3).toString('hex').toUpperCase()
+    // 6 decimal digits: short enough to type on a phone, ~10^6 space with a
+    // 10-minute single-use window is ample against guessing.
+    const body = String(randomBytes(4).readUInt32BE(0) % 1_000_000).padStart(6, '0')
     this.pending = {
-      value: `${PASSPHRASE_PREFIX}-${body}`,
+      value: body,
       createdAt: now,
       expiresMs: PASSPHRASE_TTL_MS,
     }

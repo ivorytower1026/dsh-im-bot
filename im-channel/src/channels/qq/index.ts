@@ -195,9 +195,13 @@ export class QqChannel implements ImChannel {
       })
       socket.on('open', () => resolve())
       socket.on('error', reject)
-      socket.on('close', () => {
+      socket.on('close', (code: number, reason: WebSocket.RawData) => {
+        process.stdout.write(`[im-channel] qq gateway 关闭 code=${code} reason=${String(reason)} at=${new Date().toISOString()}\n`)
         if (this.heartbeatTimer !== undefined) clearInterval(this.heartbeatTimer)
         if (!this.stopped) {
+          // 4004 = 认证失败：QQ 平台在别处重新签发过 access token 会让缓存
+          // token 失效，重连前必须强制刷新，否则拿旧 token 无限 4004。
+          if (code === 4004) this.accessToken = undefined
           void delay(RECONNECT_DELAY_MS).then(() => {
             if (!this.stopped) void this.reconnect(credentials)
           })
@@ -209,10 +213,12 @@ export class QqChannel implements ImChannel {
   private async reconnect(credentials: QqCredentials): Promise<void> {
     try {
       if (this.accessToken === undefined || this.accessToken.expiresAt - Date.now() < TOKEN_REFRESH_MARGIN_MS) {
+        process.stdout.write('[im-channel] qq 重新获取 access token\n')
         this.accessToken = await fetchAccessToken(credentials)
       }
       await this.openGateway(credentials)
-    } catch {
+    } catch (error) {
+      process.stdout.write(`[im-channel] qq 重连失败: ${error instanceof Error ? error.message : String(error)}\n`)
       await delay(RECONNECT_DELAY_MS)
       if (!this.stopped) await this.reconnect(credentials)
     }
@@ -226,26 +232,40 @@ export class QqChannel implements ImChannel {
       case 10: {
         // Hello: identify with the fresh access token, then start heartbeats.
         const interval = (payload.d as { heartbeat_interval?: number }).heartbeat_interval ?? 45_000
+        const token = this.accessToken?.token ?? ''
+        process.stdout.write(`[im-channel] qq Identify token=${token.slice(0, 12)}... len=${token.length}\n`)
         socket.send(JSON.stringify({
           op: 2,
           d: {
-            token: `QQBot ${this.accessToken?.token ?? ''}`,
+            token: `QQBot ${token}`,
             intents: INTENTS_GROUP_AND_C2C,
             shard: [0, 1],
             properties: { $os: process.platform, $browser: 'dsh-im-channel', $device: 'dsh-im-channel' },
           },
         }))
+        process.stdout.write('[im-channel] qq gateway 已发送 Identify（op 2），等待 READY\n')
         this.heartbeatTimer = setInterval(() => {
           socket.send(JSON.stringify({ op: 1, d: this.lastSeq }))
+          process.stdout.write(`[im-channel] qq heartbeat seq=${this.lastSeq} at=${new Date().toISOString()}\n`)
         }, interval)
         return
       }
+      case 9:
+        process.stdout.write(`[im-channel] qq gateway op=9（Invalid Session）at=${new Date().toISOString()}\n`)
+        return
       case 11:
         return
       case 0:
+        if (payload.t === 'READY') {
+          const ready = payload.d as { user?: { username?: string }; session_id?: string }
+          process.stdout.write(`[im-channel] qq gateway READY 已收到（bot=${ready.user?.username ?? '?'} session=${ready.session_id ?? '?'}）机器人已上线\n`)
+        } else if (payload.t !== 'C2C_MESSAGE_CREATE' && payload.t !== 'GROUP_AT_MESSAGE_CREATE') {
+          process.stdout.write(`[im-channel] qq gateway 事件 ${payload.t ?? '?'}\n`)
+        }
         this.dispatchEvent(payload.t, payload.d)
         return
       default:
+        if (payload.op !== undefined) process.stdout.write(`[im-channel] qq gateway 未处理 op=${payload.op}\n`)
         return
     }
   }

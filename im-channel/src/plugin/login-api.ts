@@ -36,26 +36,10 @@ interface QrLoginSession extends QrLoginBridge {
 
 const SESSION_TTL_MS = 8 * 60_000
 
-/** Active passphrase shared from the plugin entry (mutable cell). */
-export interface ActivePassphrase {
-  value: string
-  issuedAt: number
-}
-
-const PASSPHRASE_TTL_MS = 10 * 60_000
-
-/** Optional hook fired after every confirmed platform login. */
-export const loginHooks = {
-  onConfirmed: undefined as (() => void) | undefined,
-}
-
 export class LoginApi {
   private session: QrLoginSession | undefined
 
-  constructor(
-    private readonly ctx: Context,
-    private readonly passphrase: ActivePassphrase = { value: '', issuedAt: 0 },
-  ) {}
+  constructor(private readonly ctx: Context) {}
 
   /** Register the /im-channel/login/* routes on the web server. */
   register(): void {
@@ -122,16 +106,12 @@ export class LoginApi {
 
   private handleBindings(res: ServerResponse): void {
     // Read the persisted binding rows directly; each /bind adds one
-    // user-to-session row per platform bot. The passphrase rides along so
-    // the web UI can tell the user what to send after scanning.
+    // user-to-session row per platform bot.
     void this.readBindings().then(rows => {
-      const fresh = this.passphrase.value !== '' && Date.now() - this.passphrase.issuedAt < PASSPHRASE_TTL_MS
       respondJson(res, 200, {
         ok: true,
         bindings: rows,
         count: rows.length,
-        passphrase: fresh ? this.passphrase.value : undefined,
-        passphraseExpiresInMs: fresh ? PASSPHRASE_TTL_MS - (Date.now() - this.passphrase.issuedAt) : undefined,
       })
     })
   }
@@ -208,7 +188,6 @@ export class LoginApi {
       }
       session.status = 'confirmed'
       await this.ensureChannelInstance(kind)
-      loginHooks.onConfirmed?.()
     } catch (error) {
       session.status = 'error'
       session.error = messageOf(error)

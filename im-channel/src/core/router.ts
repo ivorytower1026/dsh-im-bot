@@ -66,7 +66,6 @@ export interface RouterDeps {
 
 /** BindStore surface the router needs (subset of BindStore for testing). */
 export interface BindStoreLike {
-  claimPassphrase(value: string, now?: number): boolean
   bind(ref: InboundMessage['from'], sessionId: string): void
   sessionIdFor(ref: InboundMessage['from']): string | undefined
   unbind(ref: InboundMessage['from']): boolean
@@ -126,7 +125,13 @@ export class Router {
     const sessionId = this.deps.store.sessionIdFor(message.from)
     if (sessionId === undefined) {
       await channel.send(target, {
-        text: '还没有绑定会话。请发送 /bind 加网页 Bot Channel 页显示的 6 位口令完成绑定，例如：/bind 483201',
+        text: '🔗 还未绑定会话。先发送 /bind 绑定当前聊天，然后发送 /项目 选择工作区，即可开始对话。\n\n机器人命令：\n/bind — 绑定当前聊天\n/项目 — 选择项目工作区\n/帮助 — 查看全部命令',
+      })
+      return
+    }
+    if (this.deps.store.workspaceFor?.(message.from) === undefined) {
+      await channel.send(target, {
+        text: '📁 已绑定但还没选择项目。发送 /项目 查看并选择工作区后，再发消息开始对话。',
       })
       return
     }
@@ -149,16 +154,14 @@ export class Router {
     const command = COMMAND_ALIASES[rawCommand] ?? rawCommand
     switch (command) {
       case 'bind': {
-        // No argument: bind directly (personal-bot convenience). With an
-        // argument: verify the one-time passphrase first.
-        const passphrase = args[0] ?? ''
-        if (passphrase !== '' && !this.deps.store.claimPassphrase(passphrase)) {
-          await channel.send(target, { text: '口令无效或已过期。直接发送 /bind 免口令绑定。' })
-          return
-        }
+        // Bind this chat to a harness session directly (no passphrase).
         const sessionId = await this.startUserSession(message.from)
         this.deps.store.bind(message.from, sessionId)
-        await channel.send(target, { text: BIND_WELCOME })
+        const workspace = this.deps.store.workspaceFor?.(message.from)
+        const lead = workspace === undefined
+          ? '✅ 绑定成功。请先发送 /项目 选择工作区，再发消息与智能体对话。'
+          : `✅ 绑定成功。当前项目：${workspace}。直接发消息即可与智能体对话。`
+        await channel.send(target, { text: `${lead}\n\n${COMMAND_LIST}` })
         return
       }
       case 'unbind': {
@@ -167,13 +170,13 @@ export class Router {
         return
       }
       case 'help': {
-        await channel.send(target, { text: BIND_WELCOME.replace('绑定成功。发送 /帮助 查看可用命令。', '机器人命令：') })
+        await channel.send(target, { text: COMMAND_LIST })
         return
       }
       case 'status': {
         const sessionId = this.deps.store.sessionIdFor(message.from)
         if (sessionId === undefined) {
-          await channel.send(target, { text: '未绑定会话。发送 /bind <口令> 绑定。' })
+          await channel.send(target, { text: '未绑定会话。发送 /bind 绑定。' })
           return
         }
         const facts = this.deps.status?.()
@@ -316,7 +319,7 @@ export class Router {
         return
       }
       default:
-        await channel.send(target, { text: `未知命令 /${rawCommand}。${COMMAND_SUMMARY}` })
+        await channel.send(target, { text: `⚠️ 未知命令 /${rawCommand}。\n\n${COMMAND_LIST}` })
     }
   }
 }
@@ -336,27 +339,11 @@ const COMMAND_ALIASES: Record<string, string> = {
   cancel: 'stop',
 }
 
-const COMMAND_SUMMARY = `发送 /帮助 查看可用命令。
-
-机器人命令：
+const COMMAND_LIST = `机器人命令：
+/项目 — 选择项目工作区（推荐先选再对话）
 /帮助 — 查看这份说明
-/状态 — 查看工作区、模型和任务状态
-/新建 或 /clear — 开始新的任务草稿
-/项目 — 选择项目工作区
-/模型 — 查看 / 切换模型
-/思考 — 切换思考级别
-/停止 — 停止正在执行的任务
-/回复 — 切换回复详细程度
-/bind — 绑定当前聊天
-/unbind — 解绑当前聊天`
-
-const BIND_WELCOME = `绑定成功。发送 /帮助 查看可用命令。
-
-机器人命令：
-/帮助 — 查看这份说明
-/状态 — 查看工作区、模型和任务状态
-/新建 或 /clear — 开始新的任务草稿
-/项目 — 选择项目工作区
+/状态 — 查看工作区、模型和状态
+/新建 或 /clear — 开始新任务
 /模型 — 查看 / 切换模型
 /思考 — 切换思考级别
 /停止 — 停止正在执行的任务

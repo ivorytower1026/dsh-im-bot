@@ -58,20 +58,26 @@ export class FeishuChannel implements ImChannel {
   async connect(): Promise<void> {
     const credentials = loadFeishuCredentials()
     if (credentials === undefined) throw new Error('飞书通道未配置：先创建自建应用并保存 appId/appSecret')
-    this.client = new Lark.Client({ appId: credentials.appId, appSecret: credentials.appSecret })
-    this.wsClient = new Lark.WSClient({
-      appId: credentials.appId,
-      appSecret: credentials.appSecret,
-      loggerLevel: Lark.LoggerLevel.warn,
-    })
-    await this.wsClient.start({
-      eventDispatcher: new Lark.EventDispatcher({}).register({
-        'im.message.receive_v1': (data) => {
-          this.dispatch(data as ReceiveMessageEvent)
-          return Promise.resolve()
-        },
-      }),
-    })
+    try {
+      this.client = new Lark.Client({ appId: credentials.appId, appSecret: credentials.appSecret })
+      this.wsClient = new Lark.WSClient({
+        appId: credentials.appId,
+        appSecret: credentials.appSecret,
+        loggerLevel: Lark.LoggerLevel.warn,
+      })
+      await this.wsClient.start({
+        eventDispatcher: new Lark.EventDispatcher({}).register({
+          'im.message.receive_v1': (data) => {
+            this.dispatch(data as ReceiveMessageEvent)
+            return Promise.resolve()
+          },
+        }),
+      } as Parameters<Lark.WSClient['start']>[0])
+      process.stdout.write('[im-channel] feishu 长连接已建立\n')
+    } catch (error) {
+      process.stdout.write(`[im-channel] feishu connect FAILED: ${error instanceof Error ? error.message : String(error)}\n`)
+      throw error
+    }
   }
 
   onMessage(handler: (message: InboundMessage) => void): void {

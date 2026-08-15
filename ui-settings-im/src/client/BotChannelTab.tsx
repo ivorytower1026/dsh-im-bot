@@ -53,17 +53,14 @@ export function BotChannelTab(props: BotChannelTabProps) {
   const [login, setLogin] = useState<LoginStatus | undefined>(undefined)
   const [startError, setStartError] = useState<string | undefined>(undefined)
   const [bindings, setBindings] = useState<BindingRow[]>([])
-  const [passphrase, setPassphrase] = useState<string | undefined>(undefined)
-  const [copied, setCopied] = useState(false)
   const pollTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   const refreshBindings = async (): Promise<void> => {
     try {
       const response = await fetch('/im-channel/bindings')
-      const body = await response.json() as { ok: boolean; bindings: BindingRow[]; passphrase?: string }
+      const body = await response.json() as { ok: boolean; bindings: BindingRow[] }
       if (body.ok) {
         setBindings(body.bindings)
-        setPassphrase(body.passphrase)
       }
     } catch {
       // Transient fetch failure: keep the last list.
@@ -83,18 +80,8 @@ export function BotChannelTab(props: BotChannelTabProps) {
     }
   }
 
-  const copyBindCommand = (): void => {
-    if (passphrase === undefined) return
-    void navigator.clipboard.writeText(`/bind ${passphrase}`).then(() => {
-      setCopied(true)
-      setTimeout(() => { setCopied(false) }, 1500)
-    })
-  }
-
   useEffect(() => {
-    // Bindings load on tab open (list + per-card counts). The passphrase is
-    // fetched in the same call but its card renders only after a confirmed
-    // scan, so nothing shows before any login exists.
+    // Bindings load on tab open (list + per-card counts).
     void refreshBindings()
     const interval = setInterval(() => { void refreshBindings() }, 10_000)
     return () => { clearInterval(interval); if (pollTimer.current !== undefined) clearInterval(pollTimer.current) }
@@ -137,6 +124,16 @@ export function BotChannelTab(props: BotChannelTabProps) {
     pollTimer.current = setInterval(() => { void pollStatus() }, POLL_INTERVAL_MS)
   }
 
+  // Re-trigger a fresh login for the currently selected platform: retire the
+  // old poll loop, drop back to the loading state, and fetch a new QR.
+  const refreshQr = (): void => {
+    if (selected === undefined) return
+    stopPolling()
+    setStartError(undefined)
+    setLogin({ kind: selected, status: 'pending', qrUrl: undefined, error: undefined })
+    void startLogin(selected)
+  }
+
   const pollStatus = async (): Promise<void> => {
     try {
       const response = await fetch('/im-channel/login/status')
@@ -145,8 +142,8 @@ export function BotChannelTab(props: BotChannelTabProps) {
       setLogin(body.session)
       if (body.session.status === 'confirmed') {
         stopPolling()
-        // Scan confirmed: fetch the passphrase now so the bind command
-        // card appears right after a successful login.
+        // Scan confirmed: the bind command card appears right after a
+        // successful login.
         void refreshBindings()
       }
       if (body.session.status === 'error') {
@@ -203,15 +200,24 @@ export function BotChannelTab(props: BotChannelTabProps) {
               </div>
             )}
             {login?.qrUrl !== undefined && (
-              <>
-                <img
-                  className={css.qrImage}
-                  src={qrSvgDataUrl(login.qrUrl)}
-                  alt={t('qr.alt')}
-                  width={240}
-                  height={240}
-                />
-              </>
+              <div className={css.qrClickArea}>
+                <button
+                  type="button"
+                  className={css.qrRefreshButton}
+                  onClick={refreshQr}
+                  aria-label={t('qr.refresh')}
+                  title={t('qr.refresh')}
+                >
+                  <img
+                    className={css.qrImage}
+                    src={qrSvgDataUrl(login.qrUrl)}
+                    alt={t('qr.alt')}
+                    width={240}
+                    height={240}
+                  />
+                </button>
+                <span className={css.qrRefreshHint}>{t('qr.refreshHint')}</span>
+              </div>
             )}
             {login?.status === 'confirmed' && <p className={css.qrOk}>{t('qr.confirmed')}</p>}
             {login?.status === 'error' && <p role="alert" className={css.qrError}>{login.error}</p>}
@@ -235,20 +241,11 @@ export function BotChannelTab(props: BotChannelTabProps) {
           </div>
         </div>
       )}
-      {passphrase !== undefined && login?.status === 'confirmed' && (
+      {login?.status === 'confirmed' && (
         <div className={css.passphraseCard}>
-          <span className={css.passphraseTitle}>{t('passphrase.title')}</span>
-          <span className={css.passphraseHint}>{t('passphrase.hint')}</span>
-          <code
-            className={css.passphraseCommand}
-            role="button"
-            tabIndex={0}
-            onClick={copyBindCommand}
-            onKeyDown={e => { if (e.key === 'Enter') copyBindCommand() }}
-          >
-            /bind {passphrase}
-          </code>
-          <span className={css.passphraseCopied}>{copied ? '✓' : ''}</span>
+          <span className={css.passphraseTitle}>{t('bind.commandTitle')}</span>
+          <span className={css.passphraseHint}>{t('bind.commandHint')}</span>
+          <code className={css.passphraseCommand}>/bind</code>
         </div>
       )}
 

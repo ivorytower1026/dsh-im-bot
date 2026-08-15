@@ -1,4 +1,3 @@
-import { createHash, randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
@@ -22,15 +21,6 @@ interface BindStoreFile {
   bindings: Binding[]
 }
 
-/** One-time passphrase valid for a single claim. */
-interface Passphrase {
-  value: string
-  createdAt: number
-  expiresMs: number
-}
-
-const PASSPHRASE_TTL_MS = 10 * 60 * 1000
-
 function storePath(): string {
   return join(homedir(), '.dsh', 'im-channel', 'bindings.json')
 }
@@ -48,37 +38,6 @@ function writeStore(store: BindStoreFile): void {
 }
 
 export class BindStore {
-  private pending: Passphrase | undefined
-
-  /** Generate a fresh one-time passphrase (invalidates any previous). */
-  issuePassphrase(now = Date.now()): string {
-    // 6 decimal digits: short enough to type on a phone, ~10^6 space with a
-    // 10-minute single-use window is ample against guessing.
-    const body = String(randomBytes(4).readUInt32BE(0) % 1_000_000).padStart(6, '0')
-    this.pending = {
-      value: body,
-      createdAt: now,
-      expiresMs: PASSPHRASE_TTL_MS,
-    }
-    return this.pending.value
-  }
-
-  /** Try to consume a passphrase: true when valid, consumed, and unused after. */
-  claimPassphrase(value: string, now = Date.now()): boolean {
-    const pending = this.pending
-    if (pending === undefined) return false
-    if (now - pending.createdAt > pending.expiresMs) {
-      this.pending = undefined
-      return false
-    }
-    // Constant-time compare before consuming.
-    const a = createHash('sha256').update(value).digest()
-    const b = createHash('sha256').update(pending.value).digest()
-    const matches = a.equals(b)
-    if (matches) this.pending = undefined
-    return matches
-  }
-
   /** Bind an IM user to a harness session. Rebinding replaces the old row. */
   bind(ref: ImUserRef, sessionId: string): void {
     const store = readStore()

@@ -7,7 +7,7 @@ import { HarnessDriver } from './driver.ts'
 import { WechatChannel, loadWechatCredentials } from '../channels/wechat/index.ts'
 import { QqChannel, loadQqCredentials } from '../channels/qq/index.ts'
 import { FeishuChannel, loadFeishuCredentials } from '../channels/feishu/index.ts'
-import { LoginApi, loginHooks } from './login-api.ts'
+import { LoginApi } from './login-api.ts'
 import type { ChannelKind, ImChannel } from '../core/channel.ts'
 
 export const name = 'im-channel'
@@ -60,11 +60,9 @@ function buildChannel(kind: ChannelKind, ctx: Context): ImChannel {
 }
 
 export function apply(ctx: Context, config: ImChannelSection): void {
-  // The active bind passphrase, surfaced to the web UI through LoginApi.
-  const activePassphrase = { value: '' as string, issuedAt: 0 }
   // Browser-facing login routes: /im-channel/login/start and /status.
   ctx.inject(['webServer'], (wctx: Context) => {
-    new LoginApi(wctx, activePassphrase).register()
+    new LoginApi(wctx).register()
   })
 
   let current: ImChannelSection = config
@@ -74,20 +72,9 @@ export function apply(ctx: Context, config: ImChannelSection): void {
   // edits, instance reconciliation) must not orphan bound sessions — the
   // driver's owned-session map is what /bind hands out.
   const driver = new HarnessDriver(ctx, {})
-  // One bind store for the whole plugin lifetime: the passphrase cell inside
-  // must survive router rebuilds, and login confirmations refresh it.
+  // One bind store for the whole plugin lifetime: the bound-session rows
+  // must survive router rebuilds, and /bind hands out new sessions from it.
   const store = new BindStore()
-  const refreshPassphrase = (): string => {
-    const passphrase = store.issuePassphrase()
-    activePassphrase.value = passphrase
-    activePassphrase.issuedAt = Date.now()
-    process.stdout.write(`\n[im-channel] 手机绑定口令（10 分钟内有效）：${passphrase}\n[im-channel] 在 IM 上发送 /bind ${passphrase} 完成绑定（网页 Bot Channel 页也会显示）\n\n`)
-    return passphrase
-  }
-  // Re-issue on every login confirmation so the 10-minute window always
-  // covers the moment the user is actually looking at the QR-success screen.
-  loginHooks.onConfirmed = () => { refreshPassphrase() }
-  const passphraseActive = activePassphrase
 
   installSettingsSection(ctx, NS, Config, config, {
     setSource: (source) => { current = source() },
@@ -166,7 +153,6 @@ export function apply(ctx: Context, config: ImChannelSection): void {
           })
         },
       })
-      refreshPassphrase()
       void ctx.effect(async function* () {
         await router?.start()
         yield () => { void router?.stop() }

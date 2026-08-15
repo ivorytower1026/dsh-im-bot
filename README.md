@@ -51,13 +51,16 @@ cd ~/.dsh/profiles/web && pnpm add \
 
 ## 使用
 
-### 微信
-
-![微信绑定成功](docs/wechat-bound.jpg)
-
-### 飞书
-
-![飞书绑定成功](docs/feishu-bound.jpg)
+<table>
+  <tr>
+    <td align="center">微信</td>
+    <td align="center">飞书</td>
+  </tr>
+  <tr>
+    <td><img src="docs/wechat-bound.jpg" width="320" alt="微信绑定成功" /></td>
+    <td><img src="docs/feishu-bound.jpg" width="320" alt="飞书绑定成功" /></td>
+  </tr>
+</table>
 
 1. 打开网页 → 设置 → 插件 → **手机连接**。
 2. 点微信或飞书卡片，用手机扫码（二维码可点击刷新）。

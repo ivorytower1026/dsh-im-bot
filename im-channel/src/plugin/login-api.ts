@@ -1,6 +1,6 @@
 /**
  * Browser-facing login surface: one webServer route pair per boot that starts
- * a QR login for any of the four platforms and reports its status. The QR
+ * a QR login for any supported platform and reports its status. The QR
  * image renders in the browser from the URL the platform returns; the host
  * only brokers the credential exchange.
  */

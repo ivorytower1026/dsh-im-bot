@@ -15,9 +15,7 @@ import type { ImChannel, ImUserId, InboundMessage, OutboundMessage, ReplyTarget 
 const FIXED_BASE_URL = 'https://ilinkai.weixin.qq.com'
 const DEFAULT_ILINK_BOT_TYPE = '3'
 export { DEFAULT_ILINK_BOT_TYPE }
-const QR_LONG_POLL_TIMEOUT_MS = 35_000
 const ACTIVE_LOGIN_TTL_MS = 5 * 60_000
-const MAX_QR_REFRESH_COUNT = 3
 const UPDATES_LONG_POLL_TIMEOUT_MS = 35_000
 const MAX_CONSECUTIVE_FAILURES = 3
 const BACKOFF_DELAY_MS = 30_000
@@ -164,116 +162,6 @@ async function getUpdates(params: { buf: string; token: string; timeoutMs: numbe
     if (error instanceof Error && error.name === 'AbortError') return { ret: 0, msgs: [] }
     throw error
   }
-}
-
-// ---------------------------------------------------------------------------
-// QR login (subset of upstream auth/login-qr.ts)
-// ---------------------------------------------------------------------------
-
-interface QrStatusResp {
-  status: 'wait' | 'scaned' | 'confirmed' | 'expired' | 'scaned_but_redirect' | 'need_verifycode' | 'verify_code_blocked' | 'binded_redirect'
-  bot_token?: string
-  ilink_bot_id?: string
-  baseurl?: string
-  ilink_user_id?: string
-  redirect_host?: string
-}
-
-async function fetchQrCode(botType: string): Promise<{ qrcode: string; url: string }> {
-  const raw = await apiFetch({
-    endpoint: `ilink/bot/get_bot_qrcode?bot_type=${encodeURIComponent(botType)}`,
-    body: JSON.stringify({ local_token_list: [] }),
-  })
-  const parsed = JSON.parse(raw) as { qrcode: string; qrcode_img_content: string }
-  return { qrcode: parsed.qrcode, url: parsed.qrcode_img_content }
-}
-
-async function pollQrStatus(qrcode: string, verifyCode?: string): Promise<QrStatusResp> {
-  let endpoint = `ilink/bot/get_qrcode_status?qrcode=${encodeURIComponent(qrcode)}`
-  if (verifyCode !== undefined) endpoint += `&verify_code=${encodeURIComponent(verifyCode)}`
-  try {
-    const raw = await apiFetch({ endpoint, timeoutMs: QR_LONG_POLL_TIMEOUT_MS })
-    return JSON.parse(raw) as QrStatusResp
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') return { status: 'wait' }
-    throw error
-  }
-}
-
-/** Render the login QR into the terminal via qrcode-terminal (fallback: URL). */
-async function displayQr(url: string): Promise<void> {
-  try {
-    const qrterm = await import('qrcode-terminal')
-    qrterm.default.generate(url, { small: true })
-  } catch {
-    process.stdout.write('(install qrcode-terminal for in-terminal QR)\n')
-  }
-  process.stdout.write(`若二维码无法显示，访问此链接继续：\n${url}\n`)
-}
-
-export interface WechatLoginResult {
-  credentials: WechatCredentials
-  scannerUserId: string
-}
-
-/**
- * Interactive terminal QR login: display QR, poll status, refresh on expiry
- * (max 3), surface verify-code prompts via the callback. Resolves with the
- * persisted credentials on confirmation.
- */
-export async function loginWechat(options: { onVerifyCode: () => Promise<string> }): Promise<WechatLoginResult> {
-  let { qrcode, url } = await fetchQrCode(DEFAULT_ILINK_BOT_TYPE)
-  await displayQr(url)
-  let refreshCount = 1
-  let pollBase = FIXED_BASE_URL
-  let pendingVerifyCode: string | undefined
-  const startedAt = Date.now()
-  while (Date.now() - startedAt < 8 * 60_000) {
-    // pollQrStatus always targets the fixed host; IDC redirect handling from
-    // upstream is intentionally deferred until a redirect is observed in use.
-    const status = await pollQrStatus(qrcode, pendingVerifyCode)
-    switch (status.status) {
-      case 'wait':
-        break
-      case 'scaned':
-        pendingVerifyCode = undefined
-        process.stdout.write('\n已扫码，正在验证…\n')
-        break
-      case 'need_verifycode': {
-        pendingVerifyCode = await options.onVerifyCode()
-        continue
-      }
-      case 'expired':
-      case 'verify_code_blocked': {
-        refreshCount += 1
-        if (refreshCount > MAX_QR_REFRESH_COUNT) throw new Error('二维码多次失效，登录流程已停止')
-        const fresh = await fetchQrCode(DEFAULT_ILINK_BOT_TYPE)
-        qrcode = fresh.qrcode
-        url = fresh.url
-        await displayQr(url)
-        break
-      }
-      case 'scaned_but_redirect':
-        if (status.redirect_host !== undefined) pollBase = `https://${status.redirect_host}`
-        break
-      case 'binded_redirect':
-        throw new Error('该微信机器人已绑定过其他实例，请在原实例解绑后重试')
-      case 'confirmed': {
-        if (status.bot_token === undefined || status.ilink_bot_id === undefined) {
-          throw new Error('登录确认但服务器未返回完整凭证')
-        }
-        const credentials: WechatCredentials = {
-          botToken: status.bot_token,
-          accountId: status.ilink_bot_id,
-          baseUrl: status.baseurl ?? FIXED_BASE_URL,
-        }
-        saveWechatCredentials(credentials)
-        return { credentials, scannerUserId: status.ilink_user_id ?? '' }
-      }
-    }
-    await new Promise(resolve => setTimeout(resolve, 1000))
-  }
-  throw new Error('登录超时，请重试')
 }
 
 // ---------------------------------------------------------------------------

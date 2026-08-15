@@ -1,7 +1,7 @@
 /**
- * Bot Channel settings plugin, browser half. Registers the "Bot Channel" tab
- * inside the Plugins settings section: four platform cards with scan-code
- * login (WeChat/QQ) and manual credential guidance (Feishu/DingTalk).
+ * Mobile Connect settings plugin, browser half. Registers the "手机连接" tab
+ * inside the Plugins settings section: platform cards with scan-code login
+ * (WeChat / Feishu).
  */
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 // Type-only: pulls the shell's SlotMap merge (the 'settings.plugins.tab' entry).
@@ -19,7 +19,7 @@ export type { Kind } from './store.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    /** The Bot Channel tab copy. */
+    /** The 手机连接 tab copy. */
     'settings.im': ImKey
   }
 }

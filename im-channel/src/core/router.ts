@@ -1,4 +1,4 @@
-import type { ImChannel, InboundMessage, OutboundMessage } from './channel.ts'
+import type { ImChannel, InboundMessage } from './channel.ts'
 
 /**
  * Harness-side conversation driver implemented by the plugin glue that

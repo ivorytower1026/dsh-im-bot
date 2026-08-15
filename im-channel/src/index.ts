@@ -6,7 +6,5 @@ export type { ImChannel, InboundMessage, OutboundMessage, AgentDriver } from './
 export { HarnessDriver } from './plugin/driver.ts'
 export { WechatChannel, loginWechat, loadWechatCredentials } from './channels/wechat/index.ts'
 export type { WechatCredentials } from './channels/wechat/index.ts'
-export { QqChannel, loginQq, loadQqCredentials } from './channels/qq/index.ts'
-export type { QqCredentials } from './channels/qq/index.ts'
 export { FeishuChannel, loadFeishuCredentials, saveFeishuCredentials } from './channels/feishu/index.ts'
 export type { FeishuCredentials } from './channels/feishu/index.ts'

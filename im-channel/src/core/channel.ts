@@ -1,13 +1,12 @@
 /**
- * Brand for opaque IM user ids (Feishu open_id, WeChat ilink_user_id,
- * QQ openid, DingTalk unionId) that cross the channel boundary into
- * binding and routing. Never a bare string.
+ * Brand for opaque IM user ids (Feishu open_id, WeChat ilink_user_id) that
+ * cross the channel boundary into binding and routing. Never a bare string.
  */
 declare const IM_USER_ID_BRAND: unique symbol
 export type ImUserId = string & { readonly [IM_USER_ID_BRAND]: true }
 
 /** Identifies which platform a message/binding came from. */
-export type ChannelKind = 'feishu' | 'wechat' | 'qq'
+export type ChannelKind = 'feishu' | 'wechat'
 
 /** A (platform, user) pair; unique key for the binding store. */
 export interface ImUserRef {
@@ -24,7 +23,7 @@ export interface InboundMessage {
   readonly text: string
   /** Platform message id, used for idempotent dedup on retry/redelivery. */
   readonly messageId: string
-  /** Chat id (Feishu chat_id, QQ group id, ...) when the message is not a 1:1 DM. */
+  /** Chat id (Feishu chat_id, ...) when the message is not a 1:1 DM. */
   readonly chatId?: string
   /** True when the message mentioned/at-ed the bot in a group chat. */
   readonly mentioned?: boolean

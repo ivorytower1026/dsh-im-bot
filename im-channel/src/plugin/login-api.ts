@@ -11,12 +11,11 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 
-type LoginKind = 'wechat' | 'qq' | 'feishu'
-const KINDS: readonly LoginKind[] = ['wechat', 'qq', 'feishu']
+type LoginKind = 'wechat' | 'feishu'
+const KINDS: readonly LoginKind[] = ['wechat', 'feishu']
 
 const KIND_LABELS: Record<LoginKind, string> = {
   wechat: '微信',
-  qq: 'QQ',
   feishu: '飞书',
 }
 
@@ -152,8 +151,8 @@ export class LoginApi {
       for (let waited = 0; waited < 100 && session.qrUrl === undefined && session.status === 'pending'; waited++) {
         await new Promise(resolve => setTimeout(resolve, 100))
       }
-      // Some platform bridges (notably QQ) poll forever without timing out;
-      // cap the session so the UI stops waiting after the TTL.
+      // Some platform bridges poll forever without timing out; cap the
+      // session so the UI stops waiting after the TTL.
       setTimeout(() => {
         if (this.session === session && session.status === 'pending') {
           session.status = 'error'
@@ -173,11 +172,6 @@ export class LoginApi {
         case 'wechat': {
           const { beginWechatQrLogin } = await import('../channels/wechat/login-bridge.ts')
           await beginWechatQrLogin(session)
-          break
-        }
-        case 'qq': {
-          const { beginQqQrLogin } = await import('../channels/qq/login-bridge.ts')
-          await beginQqQrLogin(session)
           break
         }
         case 'feishu': {

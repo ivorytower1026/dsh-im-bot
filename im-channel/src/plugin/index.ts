@@ -5,7 +5,6 @@ import { BindStore } from '../core/bind-store.ts'
 import { Router, type RouterStatus } from '../core/router.ts'
 import { HarnessDriver } from './driver.ts'
 import { WechatChannel, loadWechatCredentials } from '../channels/wechat/index.ts'
-import { QqChannel, loadQqCredentials } from '../channels/qq/index.ts'
 import { FeishuChannel, loadFeishuCredentials } from '../channels/feishu/index.ts'
 import { LoginApi } from './login-api.ts'
 import type { ChannelKind, ImChannel } from '../core/channel.ts'
@@ -28,7 +27,7 @@ export interface ImChannelSection {
   commandPrefix: string
 }
 
-const KindUnion = z.union(['feishu', 'wechat', 'qq'])
+const KindUnion = z.union(['feishu', 'wechat'])
 
 const InstanceSchema = z.object({
   kind: KindUnion,
@@ -44,7 +43,6 @@ export const Config = z.object({
 function isCredentialled(kind: ChannelKind): boolean {
   switch (kind) {
     case 'wechat': return loadWechatCredentials() !== undefined
-    case 'qq': return loadQqCredentials() !== undefined
     case 'feishu': return loadFeishuCredentials() !== undefined
   }
 }
@@ -54,7 +52,6 @@ function buildChannel(kind: ChannelKind, ctx: Context): ImChannel {
   const log = (line: string): void => { process.stdout.write(`[im-channel] ${line}\n`) }
   switch (kind) {
     case 'wechat': return new WechatChannel({ ctxLog: log })
-    case 'qq': return new QqChannel()
     case 'feishu': return new FeishuChannel()
   }
 }
@@ -175,10 +172,10 @@ function sameTopology(router: Router, next: ImChannelSection): boolean {
 
 /** Auto-create instances for platforms that have credentials but no row. */
 async function ensureInstancesForCredentials(ctx: Context, next: ImChannelSection): Promise<void> {
-  const KIND_LABELS: Record<ChannelKind, string> = { wechat: '微信', qq: 'QQ', feishu: '飞书' }
+  const KIND_LABELS: Record<ChannelKind, string> = { wechat: '微信', feishu: '飞书' }
   const patch: Record<string, { kind: ChannelKind; enabled: boolean; displayName: string }> = {}
   let changed = false
-  for (const kind of ['wechat', 'qq', 'feishu'] as const) {
+  for (const kind of ['wechat', 'feishu'] as const) {
     if (!isCredentialled(kind)) continue
     const sameKind = Object.entries(next.channels).filter(([, v]) => v.kind === kind)
     if (sameKind.length > 0) continue

@@ -83,8 +83,9 @@ export class HarnessDriver implements AgentDriver {
     // registry's canonical-cwd index groups the session under its project
     // instead of "ungrouped".
     const cwd = isAbsolute(rawCwd) ? resolve(rawCwd) : rawCwd
-    const createOptions: { sessionId: ReturnType<typeof SessionId>; meta: { cwd: string }; agentOptions?: AgentOptions } = {
-      sessionId: SessionId(crypto.randomUUID()),
+    const sessionId = SessionId(`session-${crypto.randomUUID()}`)
+    const createOptions: { sessionId: typeof sessionId; meta: { cwd: string }; agentOptions?: AgentOptions } = {
+      sessionId,
       meta: { cwd },
     }
     // The API gateway applies agentDefaultModel for web sessions; agents
@@ -118,6 +119,20 @@ export class HarnessDriver implements AgentDriver {
       },
     })
     this.owned.set(handle.agent.id, { agent: handle.agent, inflight: undefined })
+    // Web-created sessions attach to their workspace explicitly; agents.create
+    // does not, so a session here would stay in "ungrouped" even with the
+    // right cwd. Attach it to the workspace owning the cwd (if registered).
+    const workspaces = this.ctx.get('workspaceRegistry') as
+      | { resolveByPath(path: string): Promise<{ attachSession(sessionId: string): Promise<void> } | undefined> }
+      | undefined
+    if (workspaces !== undefined) {
+      try {
+        const workspace = await workspaces.resolveByPath(cwd)
+        if (workspace !== undefined) await workspace.attachSession(handle.agent.id)
+      } catch {
+        // Path not resolvable or registry busy: session stays ungrouped.
+      }
+    }
     process.stdout.write(`[im-channel] startSession ${handle.agent.id.slice(0, 8)} cwd=${createOptions.meta.cwd} model=${createOptions.agentOptions?.model ?? '?'} owned=${this.owned.size} (driver ${this.instanceId})\n`)
     return handle.agent.id
   }

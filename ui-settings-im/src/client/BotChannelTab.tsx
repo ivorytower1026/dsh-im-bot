@@ -1,13 +1,13 @@
 /**
- * Bot Channel tab content: four platform cards mn one row, each wmth its
- * brand mark. Selecting a card starts a QR login via the im-channel host
- * routes; the detail area below splits into the QR (left) and the
+ * Mobile Connect tab content: platform cards in one row, each with its brand
+ * mark. Selecting a card starts a QR login via the im-channel host routes;
+ * the detail area below splits into the QR (left) and the
  * platform-specific operation steps (right).
  */
 
 import { useEffect, useRef, useState } from 'react'
 import type { Kind } from './store.ts'
-import { FeishuMark, QqMark, WechatMark } from './platform-marks.tsx'
+import { FeishuMark, WechatMark } from './platform-marks.tsx'
 import { qrSvgDataUrl } from './qr.ts'
 import css from './BotChannelTab.module.css'
 
@@ -36,13 +36,11 @@ const POLL_INTERVAL_MS = 1500
 
 const KIND_LABELS: Record<Kind, string> = {
   wechat: '微信',
-  qq: 'QQ',
   feishu: '飞书',
 }
 
 const CARD_MARKS = {
   wechat: WechatMark,
-  qq: QqMark,
   feishu: FeishuMark,
 } as const
 
@@ -156,7 +154,6 @@ export function BotChannelTab(props: BotChannelTabProps) {
 
   const cards: Array<{ kind: Kind; label: string }> = [
     { kind: 'wechat', label: t('card.wechat') },
-    { kind: 'qq', label: t('card.qq') },
     { kind: 'feishu', label: t('card.feishu') },
   ]
 

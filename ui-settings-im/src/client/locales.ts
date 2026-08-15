@@ -1,10 +1,9 @@
 /** zh copy for the Bot Channel tab. */
 export const zh = {
-  nav: 'Bot Channel',
+  nav: '手机连接',
   intro: '选择一个平台，手机扫码即可创建/绑定机器人并接入 harness。',
   cards: '平台',
   'card.wechat': '微信',
-  'card.qq': 'QQ',
   'card.feishu': '飞书',
   'qr.waiting': '正在获取二维码…',
   'qr.alt': '登录二维码',
@@ -25,11 +24,6 @@ export const zh = {
   'step.wechat.3': '页面提示「登录成功」后，即可在微信里与机器人对话。',
   'step.wechat.4': '发送 /bind 绑定你的会话。',
   'note.wechat.verifycode': '如微信要求输入验证码，请在启动 harness 的终端中改用终端登录流程。',
-  'steps.title.qq': 'QQ 接入步骤',
-  'step.qq.1': '用手机 QQ「扫一扫」扫描左侧二维码。',
-  'step.qq.2': '选择要绑定的 QQ 机器人（没有会自动创建）。',
-  'step.qq.3': '页面提示「登录成功」后，即可在 QQ 里与机器人对话。',
-  'step.qq.4': '发送 /bind 绑定你的会话。',
   'steps.title.feishu': '飞书接入步骤',
   'step.feishu.1': '用手机飞书「扫一扫」扫描左侧二维码。',
   'step.feishu.2': '在飞书授权页选择「创建新应用」或绑定已有应用。',
@@ -39,11 +33,10 @@ export const zh = {
 
 /** en copy for the Bot Channel tab. */
 export const en = {
-  nav: 'Bot Channel',
+  nav: 'Mobile Connect',
   intro: 'Pick a platform and scan the QR code from your phone to create/bind your bot.',
   cards: 'Platform',
   'card.wechat': 'WeChat',
-  'card.qq': 'QQ',
   'card.feishu': 'Feishu',
   'qr.waiting': 'Fetching QR code…',
   'qr.alt': 'Login QR code',
@@ -64,11 +57,6 @@ export const en = {
   'step.wechat.3': 'Once the page says connected, chat with your bot in WeChat.',
   'step.wechat.4': 'Send /bind to bind your session.',
   'note.wechat.verifycode': 'If WeChat asks for a verification code, use the terminal login flow in the terminal running the harness.',
-  'steps.title.qq': 'QQ setup',
-  'step.qq.1': 'Scan the QR code with QQ on your phone.',
-  'step.qq.2': 'Pick the QQ bot to bind (one is created if you have none).',
-  'step.qq.3': 'Once the page says connected, chat with your bot in QQ.',
-  'step.qq.4': 'Send /bind to bind your session.',
   'steps.title.feishu': 'Feishu setup',
   'step.feishu.1': 'Scan the QR code with Feishu on your phone.',
   'step.feishu.2': 'Choose "create a new app" or bind an existing one.',

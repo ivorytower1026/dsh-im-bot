@@ -11,6 +11,10 @@ export interface Binding {
   /** Harness session id the IM user chats through. */
   sessionId: string
   boundAt: string
+  /** Reply verbosity preference (/回复): '简洁' | '标准' | '详细'. */
+  verbosity?: '简洁' | '标准' | '详细'
+  /** Workspace path chosen via /项目; new sessions start here. */
+  workspace?: string
 }
 
 /** Store shape persisted at ~/.dsh/im-channel/bindings.json. */
@@ -106,6 +110,48 @@ export class BindStore {
     store.bindings.splice(index, 1)
     writeStore(store)
     return true
+  }
+
+  /** Cycle the per-user reply verbosity 简洁 → 标准 → 详细 → 简洁. */
+  cycleVerbosity(ref: ImUserRef): string {
+    const order: Array<Binding['verbosity']> = ['简洁', '标准', '详细']
+    const store = readStore()
+    const row = store.bindings.find(r => r.kind === ref.kind && r.userId === ref.userId)
+    const current = order.indexOf(row?.verbosity ?? '标准')
+    const next = order[(current + 1) % order.length] ?? '标准'
+    if (row !== undefined) {
+      row.verbosity = next
+      writeStore(store)
+    }
+    return next
+  }
+
+  /** Read the user's current reply verbosity (default 标准). */
+  verbosityFor(ref: ImUserRef): string {
+    return readStore().bindings.find(r => r.kind === ref.kind && r.userId === ref.userId)?.verbosity ?? '标准'
+  }
+
+  /** Set the user's reply verbosity directly (/回复 详细). */
+  setVerbosity(ref: ImUserRef, level: '简洁' | '标准' | '详细'): void {
+    const store = readStore()
+    const row = store.bindings.find(r => r.kind === ref.kind && r.userId === ref.userId)
+    if (row === undefined) return
+    row.verbosity = level
+    writeStore(store)
+  }
+
+  /** Remember the user's workspace choice for future sessions. */
+  selectWorkspace(ref: ImUserRef, path: string): void {
+    const store = readStore()
+    const row = store.bindings.find(r => r.kind === ref.kind && r.userId === ref.userId)
+    if (row === undefined) return
+    row.workspace = path
+    writeStore(store)
+  }
+
+  /** The user's chosen workspace path, if any. */
+  workspaceFor(ref: ImUserRef): string | undefined {
+    return readStore().bindings.find(r => r.kind === ref.kind && r.userId === ref.userId)?.workspace
   }
 }
 

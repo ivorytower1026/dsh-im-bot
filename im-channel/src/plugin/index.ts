@@ -2,13 +2,12 @@ import type { Context } from '@deepseek-ai/cordis'
 import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
 import z from '@deepseek-ai/schemastery'
 import { BindStore } from '../core/bind-store.ts'
-import { Router } from '../core/router.ts'
+import { Router, type RouterStatus } from '../core/router.ts'
 import { HarnessDriver } from './driver.ts'
 import { WechatChannel, loadWechatCredentials } from '../channels/wechat/index.ts'
 import { QqChannel, loadQqCredentials } from '../channels/qq/index.ts'
 import { FeishuChannel, loadFeishuCredentials } from '../channels/feishu/index.ts'
-import { DingtalkChannel, loadDingtalkCredentials } from '../channels/dingtalk/index.ts'
-import { LoginApi } from './login-api.ts'
+import { LoginApi, loginHooks } from './login-api.ts'
 import type { ChannelKind, ImChannel } from '../core/channel.ts'
 
 export const name = 'im-channel'
@@ -29,7 +28,7 @@ export interface ImChannelSection {
   commandPrefix: string
 }
 
-const KindUnion = z.union(['feishu', 'wechat', 'qq', 'dingtalk'])
+const KindUnion = z.union(['feishu', 'wechat', 'qq'])
 
 const InstanceSchema = z.object({
   kind: KindUnion,
@@ -47,7 +46,6 @@ function isCredentialled(kind: ChannelKind): boolean {
     case 'wechat': return loadWechatCredentials() !== undefined
     case 'qq': return loadQqCredentials() !== undefined
     case 'feishu': return loadFeishuCredentials() !== undefined
-    case 'dingtalk': return loadDingtalkCredentials() !== undefined
   }
 }
 
@@ -58,7 +56,6 @@ function buildChannel(kind: ChannelKind, ctx: Context): ImChannel {
     case 'wechat': return new WechatChannel({ ctxLog: log })
     case 'qq': return new QqChannel()
     case 'feishu': return new FeishuChannel()
-    case 'dingtalk': return new DingtalkChannel()
   }
 }
 
@@ -73,6 +70,23 @@ export function apply(ctx: Context, config: ImChannelSection): void {
   let current: ImChannelSection = config
   let router: Router | undefined
   let disposeRouter: (() => void) | undefined
+  // One driver for the whole plugin lifetime: router rebuilds (settings
+  // edits, instance reconciliation) must not orphan bound sessions — the
+  // driver's owned-session map is what /bind hands out.
+  const driver = new HarnessDriver(ctx, {})
+  // One bind store for the whole plugin lifetime: the passphrase cell inside
+  // must survive router rebuilds, and login confirmations refresh it.
+  const store = new BindStore()
+  const refreshPassphrase = (): string => {
+    const passphrase = store.issuePassphrase()
+    activePassphrase.value = passphrase
+    activePassphrase.issuedAt = Date.now()
+    process.stdout.write(`\n[im-channel] 手机绑定口令（10 分钟内有效）：${passphrase}\n[im-channel] 在 IM 上发送 /bind ${passphrase} 完成绑定（网页 Bot Channel 页也会显示）\n\n`)
+    return passphrase
+  }
+  // Re-issue on every login confirmation so the 10-minute window always
+  // covers the moment the user is actually looking at the QR-success screen.
+  loginHooks.onConfirmed = () => { refreshPassphrase() }
   const passphraseActive = activePassphrase
 
   installSettingsSection(ctx, NS, Config, config, {
@@ -104,13 +118,55 @@ export function apply(ctx: Context, config: ImChannelSection): void {
         channels.push(channel)
       }
       if (channels.length === 0) return
-      const store = new BindStore()
-      const driver = new HarnessDriver(ctx, {})
-      router = new Router({ channels, driver, store, config: { commandPrefix: next.commandPrefix } })
-      const passphrase = store.issuePassphrase()
-      passphraseActive.value = passphrase
-      passphraseActive.issuedAt = Date.now()
-      process.stdout.write(`\n[im-channel] 手机绑定口令（10 分钟内有效）：${passphrase}\n[im-channel] 在 IM 上发送 /bind ${passphrase} 完成绑定（网页 Bot Channel 页也会显示）\n\n`)
+      router = new Router({
+        channels,
+        driver,
+        store,
+        config: { commandPrefix: next.commandPrefix },
+        status: (): RouterStatus => {
+          const selection = ctx.get('agentDefaultModel')
+          if (selection !== undefined) {
+            const value = selection.currentSelection() as { provider: string; model: string; reasoningEffort?: string }
+            const facts: RouterStatus = { cwd: process.cwd(), provider: value.provider, model: value.model }
+            if (value.reasoningEffort !== undefined) facts.reasoningEffort = value.reasoningEffort
+            return facts
+          }
+          return { cwd: process.cwd(), provider: '-', model: '-' }
+        },
+        workspaces: () => {
+          const registry = ctx.get('workspaceRegistry')
+          if (registry === undefined) return []
+          return registry.list().map((w: { path: string; title: string }) => ({ path: w.path, title: w.title }))
+        },
+        models: async () => {
+          const llm = ctx.get('llm')
+          if (llm === undefined) return []
+          const choices: Array<{ provider: string; model: string; label: string }> = []
+          for (const provider of llm.listProviders()) {
+            try {
+              const models = await llm.listModels(provider.id)
+              for (const m of models) choices.push({ provider: provider.id, model: m.id, label: m.id })
+            } catch {
+              // Provider without a discoverable catalog is skipped.
+            }
+          }
+          return choices
+        },
+        cancel: sessionId => driver.cancel(sessionId),
+        setDefaultModel: async patch => {
+          const service = ctx.get('agentDefaultModel')
+          if (service === undefined) throw new Error('agentDefaultModel 服务不可用')
+          const current = service.currentSelection() as { provider: string; model: string; reasoningEffort?: string }
+          await service.saveSelection({
+            provider: patch.provider ?? current.provider,
+            model: patch.model ?? current.model,
+            ...patch.reasoningEffort === undefined && current.reasoningEffort === undefined
+              ? {}
+              : { reasoningEffort: patch.reasoningEffort ?? current.reasoningEffort },
+          })
+        },
+      })
+      refreshPassphrase()
       void ctx.effect(async function* () {
         await router?.start()
         yield () => { void router?.stop() }
@@ -133,10 +189,10 @@ function sameTopology(router: Router, next: ImChannelSection): boolean {
 
 /** Auto-create instances for platforms that have credentials but no row. */
 async function ensureInstancesForCredentials(ctx: Context, next: ImChannelSection): Promise<void> {
-  const KIND_LABELS: Record<ChannelKind, string> = { wechat: '微信', qq: 'QQ', feishu: '飞书', dingtalk: '钉钉' }
+  const KIND_LABELS: Record<ChannelKind, string> = { wechat: '微信', qq: 'QQ', feishu: '飞书' }
   const patch: Record<string, { kind: ChannelKind; enabled: boolean; displayName: string }> = {}
   let changed = false
-  for (const kind of ['wechat', 'qq', 'feishu', 'dingtalk'] as const) {
+  for (const kind of ['wechat', 'qq', 'feishu'] as const) {
     if (!isCredentialled(kind)) continue
     const sameKind = Object.entries(next.channels).filter(([, v]) => v.kind === kind)
     if (sameKind.length > 0) continue

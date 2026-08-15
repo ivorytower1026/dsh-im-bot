@@ -63,6 +63,7 @@ interface IlinkMessageItem {
 }
 
 interface IlinkMessage {
+  message_id?: string | number
   from_user_id?: string
   create_time_ms?: number
   context_token?: string
@@ -88,6 +89,32 @@ function randomWechatUin(): string {
   const uint32 = randomUUID().slice(0, 8)
   const num = Number.parseInt(uint32, 16) >>> 0
   return Buffer.from(String(num), 'utf8').toString('base64')
+}
+
+function buildBaseInfo(): Record<string, string> {
+  return { channel_version: '2.4.6', bot_agent: 'dsh-im-channel' }
+}
+
+/** Persisted getupdates cursor — restart must not replay old messages. */
+function cursorPath(): string {
+  return join(homedir(), '.dsh', 'im-channel', 'state', 'wechat-cursor.txt')
+}
+
+function loadCursor(): string {
+  try {
+    return readFileSync(cursorPath(), 'utf8').trim()
+  } catch {
+    return ''
+  }
+}
+
+function saveCursor(buf: string): void {
+  try {
+    mkdirSync(join(cursorPath(), '..'), { recursive: true })
+    writeFileSync(cursorPath(), buf, 'utf8')
+  } catch {
+    // Best-effort persistence.
+  }
 }
 
 export async function apiFetch(params: {
@@ -282,6 +309,11 @@ export class WechatChannel implements ImChannel {
   private abort: AbortController | undefined
   /** context_token per user; must be echoed on every outbound send. */
   private readonly contextTokens = new Map<string, string>()
+  /** Recently seen message ids; the server redelivers on cursor re-sync. */
+  private readonly seenMessageIds = new Set<string>()
+  /** from|text → last-seen timestamp; 30s window backstop against redelivery. */
+  private readonly recentFingerprints = new Map<string, number>()
+  private static readonly SEEN_LIMIT = 500
 
   constructor(private readonly options: WechatChannelOptions = {}) {}
 
@@ -297,6 +329,13 @@ export class WechatChannel implements ImChannel {
     const credentials = loadWechatCredentials()
     if (credentials === undefined) throw new Error('微信通道未登录：运行 im-channel 登录流程（终端二维码扫码）')
     this.abort = new AbortController()
+    // Server expects an explicit session start; without it long-polls are not
+    // held and the account can be rate-limited into errcode=-14.
+    try {
+      await apiFetch({ endpoint: 'ilink/bot/msg/notifystart', body: JSON.stringify({ base_info: buildBaseInfo() }), token: credentials.botToken, timeoutMs: 10_000 })
+    } catch (error) {
+      this.ctxLog(`wechat notifystart failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
     void this.monitorLoop(credentials)
   }
 
@@ -320,16 +359,30 @@ export class WechatChannel implements ImChannel {
         context_token: this.contextTokens.get(to),
         run_id: undefined,
       },
-      base_info: { channel_version: '0.0.1', bot_agent: 'dsh-im-channel' },
+      base_info: buildBaseInfo(),
     })
-    await apiFetch({
-      endpoint: 'ilink/bot/sendmessage',
-      body,
-      token: credentials.botToken,
-    })
+    try {
+      await apiFetch({
+        endpoint: 'ilink/bot/sendmessage',
+        body,
+        token: credentials.botToken,
+      })
+      this.ctxLog(`wechat send ok to=${to.slice(0, 12)}… ${message.text.length} chars`)
+    } catch (error) {
+      this.ctxLog(`wechat send FAILED to=${to.slice(0, 12)}…: ${error instanceof Error ? error.message : String(error)}`)
+      throw error
+    }
   }
 
   async stop(): Promise<void> {
+    const credentials = loadWechatCredentials()
+    if (credentials !== undefined) {
+      try {
+        await apiFetch({ endpoint: 'ilink/bot/msg/notifystop', body: JSON.stringify({ base_info: buildBaseInfo() }), token: credentials.botToken, timeoutMs: 10_000 })
+      } catch {
+        // Best-effort: the process may be exiting.
+      }
+    }
     this.abort?.abort()
   }
 
@@ -337,12 +390,18 @@ export class WechatChannel implements ImChannel {
   private async monitorLoop(credentials: WechatCredentials): Promise<void> {
     const signal = this.abort?.signal
     if (signal === undefined) return
-    let buf = ''
+    let buf = loadCursor()
     let failures = 0
     while (!signal.aborted) {
       try {
         const resp = await getUpdates({ buf, token: credentials.botToken, timeoutMs: UPDATES_LONG_POLL_TIMEOUT_MS, signal })
         this.ctxLog(`wechat getupdates ret=${resp.ret} errcode=${resp.errcode} msgs=${resp.msgs?.length ?? 0} bufLen=${resp.get_updates_buf?.length ?? 0}`)
+        // errcode=-14: stale/invalidated bot token. Upstream pauses the whole
+        // account for an hour; hammering the endpoint escalates rate-limiting.
+        if (resp.errcode === -14 || resp.ret === -14) {
+          this.ctxLog('wechat token stale (errcode=-14) — 需要重新扫码登录，暂停轮询')
+          return
+        }
         const isApiError = (resp.ret !== undefined && resp.ret !== 0) || (resp.errcode !== undefined && resp.errcode !== 0)
         if (isApiError) {
           failures += 1
@@ -355,18 +414,34 @@ export class WechatChannel implements ImChannel {
           continue
         }
         failures = 0
-        if (resp.get_updates_buf !== undefined && resp.get_updates_buf !== '') buf = resp.get_updates_buf
+        if (resp.get_updates_buf !== undefined && resp.get_updates_buf !== '') {
+          buf = resp.get_updates_buf
+          saveCursor(buf)
+        }
         for (const message of resp.msgs ?? []) {
           const from = message.from_user_id ?? ''
           if (from === '') continue
           if (message.context_token !== undefined) this.contextTokens.set(from, message.context_token)
           const text = textFromItems(message.item_list)
           if (text.length === 0) continue
-          this.ctxLog(`wechat inbound from=${from} text=${text.slice(0, 40)}`)
+          const messageId = `${from}:${message.message_id ?? message.create_time_ms ?? Date.now()}`
+          if (this.seenMessageIds.has(messageId)) continue
+          this.seenMessageIds.add(messageId)
+          if (this.seenMessageIds.size > WechatChannel.SEEN_LIMIT) {
+            const first = this.seenMessageIds.values().next().value
+            if (first !== undefined) this.seenMessageIds.delete(first)
+          }
+          // Server-side redelivery can mint fresh message ids; the cursor is
+          // the primary guard, this windowed fingerprint is the backstop.
+          const fingerprint = `${from}|${text}`
+          const lastAt = this.recentFingerprints.get(fingerprint)
+          if (lastAt !== undefined && Date.now() - lastAt < 30_000) continue
+          this.recentFingerprints.set(fingerprint, Date.now())
+          this.ctxLog(`wechat inbound at=${new Date().toISOString().slice(11, 19)} id=${message.message_id ?? '?'} from=${from} text=${text.slice(0, 40)}`)
           this.handler?.({
             from: { kind: 'wechat', userId: from as ImUserId },
             text,
-            messageId: `${from}:${message.create_time_ms ?? Date.now()}`,
+            messageId,
           })
         }
       } catch (error) {

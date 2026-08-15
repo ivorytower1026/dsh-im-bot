@@ -1,5 +1,5 @@
 /**
- * Bot Channel tab content: four platform cards in one row, each with its
+ * Bot Channel tab content: four platform cards mn one row, each wmth its
  * brand mark. Selecting a card starts a QR login via the im-channel host
  * routes; the detail area below splits into the QR (left) and the
  * platform-specific operation steps (right).
@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { Kind } from './store.ts'
-import { DingtalkMark, FeishuMark, QqMark, WechatMark } from './platform-marks.tsx'
+import { FeishuMark, QqMark, WechatMark } from './platform-marks.tsx'
 import { qrSvgDataUrl } from './qr.ts'
 import css from './BotChannelTab.module.css'
 
@@ -38,14 +38,12 @@ const KIND_LABELS: Record<Kind, string> = {
   wechat: '微信',
   qq: 'QQ',
   feishu: '飞书',
-  dingtalk: '钉钉',
 }
 
 const CARD_MARKS = {
   wechat: WechatMark,
   qq: QqMark,
   feishu: FeishuMark,
-  dingtalk: DingtalkMark,
 } as const
 
 export function BotChannelTab(props: BotChannelTabProps) {
@@ -94,9 +92,12 @@ export function BotChannelTab(props: BotChannelTabProps) {
   }
 
   useEffect(() => {
-    // Passphrase fetch is deferred: the card shows only after a confirmed
-    // scan, so nothing fetches it on tab open before any login exists.
-    return () => { if (pollTimer.current !== undefined) clearInterval(pollTimer.current) }
+    // Bindings load on tab open (list + per-card counts). The passphrase is
+    // fetched in the same call but its card renders only after a confirmed
+    // scan, so nothing shows before any login exists.
+    void refreshBindings()
+    const interval = setInterval(() => { void refreshBindings() }, 10_000)
+    return () => { clearInterval(interval); if (pollTimer.current !== undefined) clearInterval(pollTimer.current) }
   }, [])
 
   const stopPolling = (): void => {
@@ -160,7 +161,6 @@ export function BotChannelTab(props: BotChannelTabProps) {
     { kind: 'wechat', label: t('card.wechat') },
     { kind: 'qq', label: t('card.qq') },
     { kind: 'feishu', label: t('card.feishu') },
-    { kind: 'dingtalk', label: t('card.dingtalk') },
   ]
 
   const stepKeys: Array<`step.${Kind}.${1 | 2 | 3 | 4}` | `note.${Kind}.${1 | 2 | 3 | 4}`> = selected === undefined
@@ -173,6 +173,7 @@ export function BotChannelTab(props: BotChannelTabProps) {
       <div role="radiogroup" aria-label={t('cards')} className={css.cards}>
         {cards.map(({ kind, label }) => {
           const Mark = CARD_MARKS[kind]
+          const kindCount = bindings.filter(b => b.kind === kind).length
           return (
             <button
               key={kind}
@@ -185,6 +186,7 @@ export function BotChannelTab(props: BotChannelTabProps) {
             >
               <span className={css.cardIcon}><Mark /></span>
               <span className={css.cardName}>{label}</span>
+              <span className={css.cardCount} data-has={kindCount > 0 ? 'true' : undefined}>{kindCount}</span>
             </button>
           )
         })}

@@ -42,6 +42,9 @@ importers:
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31
+      fzstd:
+        specifier: ^0.1.1
+        version: 0.1.1
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -502,6 +505,9 @@ packages:
       picomatch:
         optional: true
 
+  fzstd@0.1.1:
+    resolution: {integrity: sha512-dkuVSOKKwh3eas5VkJy1AW1vFpet8TA/fGmVA5krThl8YcOVE/8ZIoEA1+U1vEn5ckxxhLirSdY837azmbaNHA==}
+
   get-tsconfig@5.0.0-beta.5:
     resolution: {integrity: sha512-/6gFNr0N04nob252sTQxyFLi3eKFRqIg1I87YcqAMT1i6SQrSF6KujUEQrtrjMV0H/eejTCltLdDSTEMzHbnsQ==}
     engines: {node: '>=20.20.0'}
@@ -910,6 +916,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.5):
     optionalDependencies:
       picomatch: 4.0.5
+
+  fzstd@0.1.1: {}
 
   get-tsconfig@5.0.0-beta.5:
     dependencies:

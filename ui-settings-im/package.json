@@ -53,6 +53,7 @@
     "@deepseek-ai/dsh-client-ui-slots": "link:D:/project/fork_project/deepseek-harness/packages/client/ui-slots",
     "@deepseek-ai/dsh-client-web-react": "link:D:/project/fork_project/deepseek-harness/packages/client/web-react",
     "@types/react": "~18.3.1",
+    "fzstd": "^0.1.1",
     "react": "^18.2.0",
     "sharp": "^0.35.3",
     "tsdown": "^0.22.14",

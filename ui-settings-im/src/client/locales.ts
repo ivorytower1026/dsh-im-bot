@@ -6,7 +6,6 @@ export const zh = {
   'card.wechat': '微信',
   'card.qq': 'QQ',
   'card.feishu': '飞书',
-  'card.dingtalk': '钉钉',
   'qr.waiting': '正在获取二维码…',
   'qr.alt': '登录二维码',
   'qr.confirmed': '登录成功，机器人已接入。',
@@ -35,11 +34,6 @@ export const zh = {
   'step.feishu.2': '在飞书授权页选择「创建新应用」或绑定已有应用。',
   'step.feishu.3': '确认授权——应用会自动配好机器人能力与事件订阅。',
   'step.feishu.4': '页面提示「登录成功」后，即可在飞书里与机器人对话。',
-  'steps.title.dingtalk': '钉钉接入步骤',
-  'step.dingtalk.1': '用手机钉钉「扫一扫」扫描左侧二维码。',
-  'step.dingtalk.2': '在钉钉授权页点击「一键创建新机器人」。',
-  'step.dingtalk.3': '页面提示「登录成功」后，即可在钉钉里与机器人对话。',
-  'step.dingtalk.4': '发送 /bind <终端显示的口令> 绑定你的会话。',
 } as const
 
 /** en copy for the Bot Channel tab. */
@@ -50,7 +44,6 @@ export const en = {
   'card.wechat': 'WeChat',
   'card.qq': 'QQ',
   'card.feishu': 'Feishu',
-  'card.dingtalk': 'DingTalk',
   'qr.waiting': 'Fetching QR code…',
   'qr.alt': 'Login QR code',
   'qr.confirmed': 'Logged in — your bot is connected.',
@@ -79,11 +72,6 @@ export const en = {
   'step.feishu.2': 'Choose "create a new app" or bind an existing one.',
   'step.feishu.3': 'Confirm — bot capability and event subscriptions are configured automatically.',
   'step.feishu.4': 'Once the page says connected, chat with your bot in Feishu.',
-  'steps.title.dingtalk': 'DingTalk setup',
-  'step.dingtalk.1': 'Scan the QR code with DingTalk on your phone.',
-  'step.dingtalk.2': 'Tap "create a new bot in one click" on the authorization page.',
-  'step.dingtalk.3': 'Once the page says connected, chat with your bot in DingTalk.',
-  'step.dingtalk.4': 'Send /bind <passphrase shown in the terminal> to bind your session.',
 } as const
 
 export type ImKey = keyof typeof zh

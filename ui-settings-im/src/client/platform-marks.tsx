@@ -39,6 +39,3 @@ export function FeishuMark(props: MarkProps) {
   return <MarkImg {...props} src={FEISHU_PNG} />
 }
 
-export function DingtalkMark(props: MarkProps) {
-  return <MarkImg {...props} src={DINGTALK_PNG} />
-}

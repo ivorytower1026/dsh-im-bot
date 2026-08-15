@@ -11,14 +11,13 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 
-type LoginKind = 'wechat' | 'qq' | 'feishu' | 'dingtalk'
-const KINDS: readonly LoginKind[] = ['wechat', 'qq', 'feishu', 'dingtalk']
+type LoginKind = 'wechat' | 'qq' | 'feishu'
+const KINDS: readonly LoginKind[] = ['wechat', 'qq', 'feishu']
 
 const KIND_LABELS: Record<LoginKind, string> = {
   wechat: '微信',
   qq: 'QQ',
   feishu: '飞书',
-  dingtalk: '钉钉',
 }
 
 const NS = settingsNamespace('im-channel')
@@ -44,6 +43,11 @@ export interface ActivePassphrase {
 }
 
 const PASSPHRASE_TTL_MS = 10 * 60_000
+
+/** Optional hook fired after every confirmed platform login. */
+export const loginHooks = {
+  onConfirmed: undefined as (() => void) | undefined,
+}
 
 export class LoginApi {
   private session: QrLoginSession | undefined
@@ -94,19 +98,20 @@ export class LoginApi {
 
   /**
    * Auto-create a channel instance in settings once a platform login is
-   * confirmed so the router (re)starts without manual configuration. Names
-   * are `<kind>-N` counting existing instances of the same kind.
+   * confirmed so the router (re)starts without manual configuration. One
+   * instance per platform: the wechat protocol allows exactly one poll
+   * session per bot token, and duplicate instances multiply every reply.
    */
   private async ensureChannelInstance(kind: LoginKind): Promise<void> {
     try {
       this.ctx.inject(['settings'], async sctx => {
         const section = sctx.settings.get(NS) as { channels?: Record<string, { kind: LoginKind }> } | undefined
         const channels = section?.channels ?? {}
-        const sameKind = Object.entries(channels).filter(([, v]) => v.kind === kind)
-        const name = `${kind}-${sameKind.length + 1}`
+        const exists = Object.values(channels).some(v => v.kind === kind)
+        if (exists) return
         await sctx.settings.update(NS, {
           channels: {
-            [name]: { kind, enabled: true, displayName: `${KIND_LABELS[kind]}机器人 ${sameKind.length + 1}` },
+            [`${kind}-1`]: { kind, enabled: true, displayName: `${KIND_LABELS[kind]}机器人 1` },
           },
         })
       })
@@ -200,14 +205,10 @@ export class LoginApi {
           await beginFeishuQrLogin(session)
           break
         }
-        case 'dingtalk': {
-          const { beginDingtalkQrLogin } = await import('../channels/dingtalk/login-bridge.ts')
-          await beginDingtalkQrLogin(session)
-          break
-        }
       }
       session.status = 'confirmed'
       await this.ensureChannelInstance(kind)
+      loginHooks.onConfirmed?.()
     } catch (error) {
       session.status = 'error'
       session.error = messageOf(error)

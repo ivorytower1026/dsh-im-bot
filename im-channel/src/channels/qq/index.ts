@@ -137,8 +137,15 @@ export class QqChannel implements ImChannel {
     const credentials = loadQqCredentials()
     if (credentials === undefined) throw new Error('QQ 通道未登录：运行 im-channel 登录流程（终端扫码）')
     this.stopped = false
-    this.accessToken = await fetchAccessToken(credentials)
-    await this.openGateway(credentials)
+    try {
+      this.accessToken = await fetchAccessToken(credentials)
+      process.stdout.write('[im-channel] qq access token 获取成功\n')
+      await this.openGateway(credentials)
+      process.stdout.write('[im-channel] qq gateway WebSocket 已连接\n')
+    } catch (error) {
+      process.stdout.write(`[im-channel] qq connect FAILED: ${error instanceof Error ? error.message : String(error)}\n`)
+      throw error
+    }
   }
 
   onMessage(handler: (message: InboundMessage) => void): void {
